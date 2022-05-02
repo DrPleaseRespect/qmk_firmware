@@ -26,9 +26,21 @@
 enum layer_names {
     WIN_BASE    = 0,
     WIN_FN      = 1,
-    MAC_BASE    = 2,
+    WIN_TOGGLE  = 2,
     MAC_FN      = 3,
 };
+
+enum custom_keycodes {
+  WIN_PWR = SAFE_RANGE,
+};
+
+
+bool nkro_enabled = true;
+bool rgb_enabled = true;
+HSV RGB_MATRIX_HSV_HISTORY;
+uint8_t RGB_MATRIX_MODE_HISTORY;
+
+static uint16_t blink_timer;
 
 #define KC_TASK LGUI(KC_TAB)        // Task viewer
 #define KC_FLXP LGUI(KC_E)          // Windows file explorer
@@ -71,7 +83,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         _______, KC_KP_7, KC_KP_8, KC_KP_9, KC_PMNS, _______, _______, _______, _______, _______, _______, _______, _______,   _______,     RGB_SPD,  RGB_SAD,  RGB_HUD,
         _______, KC_KP_4, KC_KP_5, KC_KP_6, KC_PPLS, _______, _______, _______, _______, _______, _______, _______,            _______,
         _______, KC_KP_1, KC_KP_2, KC_KP_3, KC_PENT, _______, _______, _______, _______, _______, _______,          _______,                          RGB_VAI,
-        _______, KC_PDOT, KC_KP_0,                   _______,                                     _______, _______, _______,   _______,     RGB_RMOD, RGB_VAD,  RGB_MOD
+        _______, KC_PDOT, KC_KP_0,                   _______,                                     _______, _______, XXXXXXX,   _______,     RGB_RMOD, RGB_VAD,  RGB_MOD
     ),
 
     /*  Mac layout
@@ -90,14 +102,15 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     +-------------------------------------------------------------------------------------------+
     */
 
-  [MAC_BASE] = LAYOUT_tkl_ansi( // Mac base layout
-      KC_ESC,           KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,    KC_F12,        KC_MSNP, KC_SIRI, RGB_MOD,
-      KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_MINS, KC_EQL,    KC_BSPC,       KC_INS,  KC_HOME, KC_PGUP,
-      KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_LBRC, KC_RBRC,   KC_BSLS,       KC_DEL,  KC_END,  KC_PGDN,
-      KC_CAPS, KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,            KC_ENT,
-      KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH,          KC_RSFT,                           KC_UP,
-      KC_LCTL, KC_LALT, KC_LGUI,                   KC_SPC,                                      KC_RGUI, KC_RALT, MO(MAC_FN),KC_RCTL,       KC_LEFT, KC_DOWN, KC_RGHT
-  ),
+  [WIN_TOGGLE] = LAYOUT_tkl_ansi( // Mac Fn overlay
+      _______,          _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,         _______, _______, _______,
+      _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,         _______, _______, _______,
+      _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,         _______, _______, _______,
+      _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______,
+      _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______,                           _______,
+      _______, _______, _______,                   _______,                                     _______, _______, XXXXXXX, _______,         _______, _______, _______
+    ),
+
 
   [MAC_FN] = LAYOUT_tkl_ansi( // Mac Fn overlay
       RESET,            KC_BRID, KC_BRIU, KC_MSSN, KC_FIND, RGB_VAD, RGB_VAI, KC_MPRV, KC_MPLY, KC_MNXT, KC_MUTE, KC_VOLD, KC_VOLU,         _______, _______, RGB_TOG,
@@ -132,10 +145,13 @@ bool dip_switch_update_user(uint8_t index, bool active){
   return true;
 }
 
+
 void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     bool caps_override = false;
+    //static uint16_t blink_timer;
+    
     if (IS_LAYER_ON(WIN_FN)) {
-      caps_override = true;
+        caps_override = true;
         uint8_t layer = get_highest_layer(layer_state);
 
         for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
@@ -144,14 +160,26 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
 
                 if (index >= led_min && index <= led_max && index != NO_LED &&
                 keymap_key_to_keycode(layer, (keypos_t){col,row}) > KC_TRNS) {
-                    rgb_matrix_set_color(index, RGB_GREEN);
+                    if (index != 1 || index != 0 ) {
+                      rgb_matrix_set_color(index, RGB_GREEN);
+                    }
                 }
             }
+        }
+        if (timer_elapsed(blink_timer) >= 0 && timer_elapsed(blink_timer) <= 100) {
+          rgb_matrix_set_color(0, RGB_RED);
+        }
+        else if (timer_elapsed(blink_timer) >= 200) {
+          blink_timer = timer_read();
+        }
+        else {
+          rgb_matrix_set_color(0, RGB_BLACK);
         }
     }
     else {
       caps_override = false;
     }
+
     if (caps_override == false) {
       if (host_keyboard_led_state().caps_lock) {
           for (uint8_t i = led_min; i <= led_max; i++) {
@@ -161,6 +189,50 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
           }
       }
     }
+}
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  switch (keycode) {
+    case NK_TOGG:
+      if (record->event.pressed) {
+        if (nkro_enabled == true) {
+          nkro_enabled = false;
+        }
+        else {
+          nkro_enabled = true;
+        }
+      }
+      return true;
+
+    case RGB_TOG: // Replace RGB_TOG with a noneeprom and solid(black) version
+      if (record->event.pressed) {
+        if (rgb_enabled) {
+          RGB_MATRIX_HSV_HISTORY = rgb_matrix_get_hsv();
+          RGB_MATRIX_MODE_HISTORY = rgb_matrix_get_mode();
+          rgb_enabled = false;
+          rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
+          rgb_matrix_sethsv_noeeprom(HSV_OFF);
+        }
+        else {
+          rgb_enabled = true;
+          HSV color = RGB_MATRIX_HSV_HISTORY;
+          rgb_matrix_mode_noeeprom(RGB_MATRIX_MODE_HISTORY);
+          rgb_matrix_sethsv_noeeprom(color.h, color.s, color.v);
+        }
+      }
+      return false;
+    default:
+      return true;
+  }
+}
+
+void matrix_scan_user(void) {
+  if (nkro_enabled) {
+    rgb_matrix_set_color(1, RGB_BLUE);
+  }
+  else {
+    rgb_matrix_set_color(1, RGB_RED);
+  }
 }
 
 layer_state_t layer_state_set_user(layer_state_t state) {
@@ -177,6 +249,10 @@ layer_state_t layer_state_set_user(layer_state_t state) {
         break;
     }
   return state;
+}
+
+void keyboard_pre_init_user(void) {
+  blink_timer = timer_read();
 }
 
 void keyboard_post_init_user(void) {
