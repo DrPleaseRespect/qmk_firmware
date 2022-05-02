@@ -26,21 +26,9 @@
 enum layer_names {
     WIN_BASE    = 0,
     WIN_FN      = 1,
+    MAC_BASE    = 2,
+    MAC_FN      = 3,
 };
-
-enum custom_keycodes {
-  GM_MODE = SAFE_RANGE,
-  M_SHUT,
-};
-
-bool M_SHUT_Active = false;
-bool rgb_enabled = true;
-bool gui_keys_enabled = true;
-HSV RGB_HISTORY_HSV;
-uint8_t RGB_HISTORY_MODE;
-static uint16_t blink_timer;
-uint16_t M_SHUT_Timer = 0;
-
 
 #define KC_TASK LGUI(KC_TAB)        // Task viewer
 #define KC_FLXP LGUI(KC_E)          // Windows file explorer
@@ -78,12 +66,12 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
 
   [WIN_FN] = LAYOUT_tkl_ansi(
-          RESET,          NK_TOGG, GM_MODE, _______, _______, _______, _______, KC_BRID, KC_BRIU, _______, _______, _______,   KC_MSTP,     KC_MPLY,  KC_MPRV,  KC_MNXT,
-        _______, _______, KC_NUM , KC_PSLS, KC_PAST, _______, _______, _______, _______, _______, _______, _______, _______,   _______,     RGB_SPI,  RGB_SAI,  RGB_HUI,
-        _______, KC_KP_7, KC_KP_8, KC_KP_9, KC_PMNS, _______, _______, _______, _______, _______, _______, _______, _______,   RGB_TOG,     RGB_SPD,  RGB_SAD,  RGB_HUD,
-        _______, KC_KP_4, KC_KP_5, KC_KP_6, KC_PPLS, _______, _______, _______, _______, M_SHUT , _______, _______,            _______,
+          RESET,          NK_TOGG, _______, _______, _______, _______, _______, KC_BRID, KC_BRIU, _______, _______, _______,   KC_MSTP,     KC_MPLY,  KC_MPRV,  KC_MNXT,
+        _______, _______, KC_NUM , KC_PSLS, KC_PAST, _______, _______, _______, _______, _______, _______, _______, _______,   RGB_TOG,     RGB_SPI,  RGB_SAI,  RGB_HUI,
+        _______, KC_KP_7, KC_KP_8, KC_KP_9, KC_PMNS, _______, _______, _______, _______, _______, _______, _______, _______,   _______,     RGB_SPD,  RGB_SAD,  RGB_HUD,
+        _______, KC_KP_4, KC_KP_5, KC_KP_6, KC_PPLS, _______, _______, _______, _______, _______, _______, _______,            _______,
         _______, KC_KP_1, KC_KP_2, KC_KP_3, KC_PENT, _______, _______, _______, _______, _______, _______,          _______,                          RGB_VAI,
-        _______, KC_PDOT, KC_KP_0,                   _______,                                     _______, _______, XXXXXXX,   _______,     RGB_RMOD, RGB_VAD,  RGB_MOD
+        _______, KC_PDOT, KC_KP_0,                   _______,                                     _______, _______, _______,   _______,     RGB_RMOD, RGB_VAD,  RGB_MOD
     ),
 
     /*  Mac layout
@@ -101,24 +89,25 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     |LCTRL| LALT| LGUI |            SPACE            | RGUI| RALT | FN | RCTRL | |LFT |DWN |RGT |
     +-------------------------------------------------------------------------------------------+
     */
+
+  [MAC_BASE] = LAYOUT_tkl_ansi( // Mac base layout
+      KC_ESC,           KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,    KC_F12,        KC_MSNP, KC_SIRI, RGB_MOD,
+      KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_MINS, KC_EQL,    KC_BSPC,       KC_INS,  KC_HOME, KC_PGUP,
+      KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_LBRC, KC_RBRC,   KC_BSLS,       KC_DEL,  KC_END,  KC_PGDN,
+      KC_CAPS, KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,            KC_ENT,
+      KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH,          KC_RSFT,                           KC_UP,
+      KC_LCTL, KC_LALT, KC_LGUI,                   KC_SPC,                                      KC_RGUI, KC_RALT, MO(MAC_FN),KC_RCTL,       KC_LEFT, KC_DOWN, KC_RGHT
+  ),
+
+  [MAC_FN] = LAYOUT_tkl_ansi( // Mac Fn overlay
+      RESET,            KC_BRID, KC_BRIU, KC_MSSN, KC_FIND, RGB_VAD, RGB_VAI, KC_MPRV, KC_MPLY, KC_MNXT, KC_MUTE, KC_VOLD, KC_VOLU,         _______, _______, RGB_TOG,
+      _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,         _______, _______, _______,
+      _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,         _______, _______, _______,
+      _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______,
+      _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______,                           _______,
+      _______, _______, _______,                   _______,                                     _______, _______, _______, _______,         RGB_SAD, _______, RGB_SAI
+    )
 };
-
-void disable_rgb(bool status) {
-  if (status) {
-    rgb_enabled = false;
-    RGB_HISTORY_HSV = rgb_matrix_get_hsv();
-    RGB_HISTORY_MODE = rgb_matrix_get_mode();
-    rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
-    rgb_matrix_sethsv_noeeprom(HSV_OFF);
-  }
-  else {
-    rgb_enabled = true;
-    HSV colors = RGB_HISTORY_HSV;
-    rgb_matrix_mode_noeeprom(RGB_HISTORY_MODE);
-    rgb_matrix_sethsv_noeeprom(colors.h, colors.s, colors.v);
-  }
-}
-
 
 bool dip_switch_update_user(uint8_t index, bool active){
   switch(index){
@@ -143,171 +132,35 @@ bool dip_switch_update_user(uint8_t index, bool active){
   return true;
 }
 
-void matrix_status_indicators(void) {
-  if (keymap_config.nkro) {
-    rgb_matrix_set_color(1, RGB_BLUE);
-  }
-  else {
-    rgb_matrix_set_color(1, RGB_RED);
-  }
-  if (!gui_keys_enabled) {
-    uint8_t keys[2] = {77, 81};
-    uint8_t rows[2] = {5,5};
-    uint8_t col[2] = {1, 11};
-    if (IS_LAYER_ON(WIN_FN)) {
-      for (uint8_t index = 0; index < 2; ++index) {
-        if (!(keymap_key_to_keycode(WIN_FN, (keypos_t){col[index],rows[index]}) > KC_TRNS)) {
-          rgb_matrix_set_color(keys[index], RGB_RED);
-        }
-      }
-    }
-    else {
-      for (uint8_t index = 0; index < 2; ++index) {
-        rgb_matrix_set_color(keys[index], RGB_RED);
-      }
-    }
-  }
-}
-
 void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     bool caps_override = false;
-    //static uint16_t blink_timer;
-    
     if (IS_LAYER_ON(WIN_FN)) {
-
-        caps_override = true;
+      caps_override = true;
         uint8_t layer = get_highest_layer(layer_state);
+
         for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
             for (uint8_t col = 0; col < MATRIX_COLS; ++col) {
                 uint8_t index = g_led_config.matrix_co[row][col];
-                uint16_t keycode = keymap_key_to_keycode(layer, (keypos_t){col,row});
+
                 if (index >= led_min && index <= led_max && index != NO_LED &&
-                    keycode > KC_TRNS) {
-                    switch(keycode) {
-                      case RESET:
-                        break;
-                      case NK_TOGG:
-                        break;
-                      case GM_MODE:
-                        break;
-                      case M_SHUT:
-                        break;
-                      default:
-                        rgb_matrix_set_color(index, RGB_GREEN);
-                        break;
-                    }
+                keymap_key_to_keycode(layer, (keypos_t){col,row}) > KC_TRNS) {
+                    rgb_matrix_set_color(index, RGB_GREEN);
                 }
             }
-        }
-
-        if (host_keyboard_led_state().num_lock) {
-          rgb_matrix_set_color(18, RGB_GREEN);
-        }
-        else {
-          rgb_matrix_set_color(18, RGB_RED);
-        }
-
-        if (timer_elapsed(blink_timer) >= 0 && timer_elapsed(blink_timer) <= 100) {
-          rgb_matrix_set_color(0, RGB_RED);
-          rgb_matrix_set_color(59, RGB_RED);
-
-          if (gui_keys_enabled) {
-            rgb_matrix_set_color(2, RGB_RED);
-          }
-          else {
-            rgb_matrix_set_color(2, RGB_GREEN);
-          }
-        }
-
-        else {
-          if (timer_elapsed(blink_timer) >= 200) {
-            blink_timer = timer_read();
-          }
-          rgb_matrix_set_color(0, RGB_BLACK);
-          rgb_matrix_set_color(2, RGB_BLACK);
-          rgb_matrix_set_color(59, RGB_BLACK);
-          
-
         }
     }
     else {
       caps_override = false;
     }
-
     if (caps_override == false) {
       if (host_keyboard_led_state().caps_lock) {
-          const uint8_t SIZE = 3;
-          uint8_t start[3] = {34, 51, 64}; // Specific Coordinates for K8
-          uint8_t end[3] = {43, 59, 70}; // Specific Coordinates for K8
-
-          for (uint8_t i = 0; i < SIZE; i++) {
-            for (uint8_t u = start[i]; u <= end[i]; u++){
-              if (g_led_config.flags[u] & LED_FLAG_KEYLIGHT) {
-                  rgb_matrix_set_color(u, RGB_GOLD);
+          for (uint8_t i = led_min; i <= led_max; i++) {
+              if (g_led_config.flags[i] & LED_FLAG_KEYLIGHT) {
+                  rgb_matrix_set_color(i, RGB_GOLD);
               }
-            }
           }
       }
     }
-
-    matrix_status_indicators();
-}
-
-bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  switch (keycode) {
-    case RGB_TOG:
-      if (record->event.pressed) {
-        if (rgb_enabled) {
-          disable_rgb(true);
-        }
-        else {
-          disable_rgb(false);
-        }
-      }
-      return false;
-    case KC_LGUI:
-      return gui_keys_enabled;
-    case KC_RGUI:
-      return gui_keys_enabled;
-    case GM_MODE:
-      if (record->event.pressed) {
-        if (gui_keys_enabled) {
-          gui_keys_enabled = false;
-        }
-        else {
-          gui_keys_enabled = true;
-        }
-      }
-      return true;
-    case M_SHUT:
-      if (record->event.pressed) {
-        if (!M_SHUT_Active) {
-          SEND_STRING(SS_LGUI("r"));
-          M_SHUT_Active = true;
-          M_SHUT_Timer = timer_read();
-        }
-
-      }
-      return true;
-    default:
-      return true;
-  }
-}
-
-void M_SHUT_function(void) {
-    if (M_SHUT_Active) {
-      if (timer_elapsed(M_SHUT_Timer) > 300) {
-        SEND_STRING("shutdown /s /t 0 /f /c deeznuts " SS_TAP(X_ENT));
-        M_SHUT_Timer = 0;
-        M_SHUT_Active = false;
-      }
-    }
-}
-
-void matrix_scan_user(void) {
-  //matrix_status_indicators();
-  M_SHUT_function();
-
 }
 
 layer_state_t layer_state_set_user(layer_state_t state) {
@@ -324,10 +177,6 @@ layer_state_t layer_state_set_user(layer_state_t state) {
         break;
     }
   return state;
-}
-
-void keyboard_pre_init_user(void) {
-  blink_timer = timer_read();
 }
 
 void keyboard_post_init_user(void) {
