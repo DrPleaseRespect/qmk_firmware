@@ -34,13 +34,12 @@ enum custom_keycodes {
   WIN_PWR = SAFE_RANGE,
 };
 
-
 bool nkro_enabled = true;
 bool rgb_enabled = true;
-HSV RGB_MATRIX_HSV_HISTORY;
-uint8_t RGB_MATRIX_MODE_HISTORY;
-
+HSV RGB_HISTORY_HSV;
+uint8_t RGB_HISTORY_MODE;
 static uint16_t blink_timer;
+
 
 #define KC_TASK LGUI(KC_TAB)        // Task viewer
 #define KC_FLXP LGUI(KC_E)          // Windows file explorer
@@ -79,8 +78,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
   [WIN_FN] = LAYOUT_tkl_ansi(
           RESET,          NK_TOGG, _______, _______, _______, _______, _______, KC_BRID, KC_BRIU, _______, _______, _______,   KC_MSTP,     KC_MPLY,  KC_MPRV,  KC_MNXT,
-        _______, _______, KC_NUM , KC_PSLS, KC_PAST, _______, _______, _______, _______, _______, _______, _______, _______,   RGB_TOG,     RGB_SPI,  RGB_SAI,  RGB_HUI,
-        _______, KC_KP_7, KC_KP_8, KC_KP_9, KC_PMNS, _______, _______, _______, _______, _______, _______, _______, _______,   _______,     RGB_SPD,  RGB_SAD,  RGB_HUD,
+        _______, _______, KC_NUM , KC_PSLS, KC_PAST, _______, _______, _______, _______, _______, _______, _______, _______,   _______,     RGB_SPI,  RGB_SAI,  RGB_HUI,
+        _______, KC_KP_7, KC_KP_8, KC_KP_9, KC_PMNS, _______, _______, _______, _______, _______, _______, _______, _______,   RGB_TOG,     RGB_SPD,  RGB_SAD,  RGB_HUD,
         _______, KC_KP_4, KC_KP_5, KC_KP_6, KC_PPLS, _______, _______, _______, _______, _______, _______, _______,            _______,
         _______, KC_KP_1, KC_KP_2, KC_KP_3, KC_PENT, _______, _______, _______, _______, _______, _______,          _______,                          RGB_VAI,
         _______, KC_PDOT, KC_KP_0,                   _______,                                     _______, _______, XXXXXXX,   _______,     RGB_RMOD, RGB_VAD,  RGB_MOD
@@ -122,6 +121,22 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     )
 };
 
+void disable_rgb(bool status) {
+  if (status) {
+    rgb_enabled = false;
+    RGB_HISTORY_HSV = rgb_matrix_get_hsv();
+    RGB_HISTORY_MODE = rgb_matrix_get_mode();
+    rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
+    rgb_matrix_sethsv_noeeprom(HSV_OFF);
+  }
+  else {
+    rgb_enabled = true;
+    HSV colors = RGB_HISTORY_HSV;
+    rgb_matrix_mode_noeeprom(RGB_HISTORY_MODE);
+    rgb_matrix_sethsv_noeeprom(colors.h, colors.s, colors.v);
+  }
+}
+
 bool dip_switch_update_user(uint8_t index, bool active){
   switch(index){
     case 0:
@@ -151,9 +166,9 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     //static uint16_t blink_timer;
     
     if (IS_LAYER_ON(WIN_FN)) {
+
         caps_override = true;
         uint8_t layer = get_highest_layer(layer_state);
-
         for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
             for (uint8_t col = 0; col < MATRIX_COLS; ++col) {
                 uint8_t index = g_led_config.matrix_co[row][col];
@@ -166,6 +181,14 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
                 }
             }
         }
+
+        if (host_keyboard_led_state().num_lock) {
+          rgb_matrix_set_color(18, RGB_GREEN);
+        }
+        else {
+          rgb_matrix_set_color(18, RGB_RED);
+        }
+
         if (timer_elapsed(blink_timer) >= 0 && timer_elapsed(blink_timer) <= 100) {
           rgb_matrix_set_color(0, RGB_RED);
         }
@@ -182,10 +205,16 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
 
     if (caps_override == false) {
       if (host_keyboard_led_state().caps_lock) {
-          for (uint8_t i = led_min; i <= led_max; i++) {
-              if (g_led_config.flags[i] & LED_FLAG_KEYLIGHT) {
-                  rgb_matrix_set_color(i, RGB_GOLD);
+          const uint8_t SIZE = 3;
+          uint8_t start[3] = {34, 51, 64}; // Specific Coordinates for K8
+          uint8_t end[3] = {43, 59, 70}; // Specific Coordinates for K8
+
+          for (uint8_t i = 0; i < SIZE; i++) {
+            for (uint8_t u = start[i]; u <= end[i]; u++){
+              if (g_led_config.flags[u] & LED_FLAG_KEYLIGHT) {
+                  rgb_matrix_set_color(u, RGB_GOLD);
               }
+            }
           }
       }
     }
@@ -204,20 +233,13 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       }
       return true;
 
-    case RGB_TOG: // Replace RGB_TOG with a noneeprom and solid(black) version
+    case RGB_TOG:
       if (record->event.pressed) {
         if (rgb_enabled) {
-          RGB_MATRIX_HSV_HISTORY = rgb_matrix_get_hsv();
-          RGB_MATRIX_MODE_HISTORY = rgb_matrix_get_mode();
-          rgb_enabled = false;
-          rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
-          rgb_matrix_sethsv_noeeprom(HSV_OFF);
+          disable_rgb(true);
         }
         else {
-          rgb_enabled = true;
-          HSV color = RGB_MATRIX_HSV_HISTORY;
-          rgb_matrix_mode_noeeprom(RGB_MATRIX_MODE_HISTORY);
-          rgb_matrix_sethsv_noeeprom(color.h, color.s, color.v);
+          disable_rgb(false);
         }
       }
       return false;
@@ -233,6 +255,7 @@ void matrix_scan_user(void) {
   else {
     rgb_matrix_set_color(1, RGB_RED);
   }
+  
 }
 
 layer_state_t layer_state_set_user(layer_state_t state) {
