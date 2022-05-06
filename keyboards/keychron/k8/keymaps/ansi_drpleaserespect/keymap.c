@@ -32,7 +32,6 @@ enum custom_keycodes {
   GM_MODE = SAFE_RANGE,
 };
 
-bool nkro_enabled = true;
 bool rgb_enabled = true;
 bool gui_keys_enabled = true;
 HSV RGB_HISTORY_HSV;
@@ -213,17 +212,6 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   switch (keycode) {
-    case NK_TOGG:
-      if (record->event.pressed) {
-        if (nkro_enabled == true) {
-          nkro_enabled = false;
-        }
-        else {
-          nkro_enabled = true;
-        }
-      }
-      return true;
-
     case RGB_TOG:
       if (record->event.pressed) {
         if (rgb_enabled) {
@@ -254,7 +242,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 }
 
 void matrix_scan_user(void) {
-  if (nkro_enabled) {
+  if (keymap_config.nkro) {
     rgb_matrix_set_color(1, RGB_BLUE);
   }
   else {
