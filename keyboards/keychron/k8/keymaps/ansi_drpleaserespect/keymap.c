@@ -30,13 +30,16 @@ enum layer_names {
 
 enum custom_keycodes {
   GM_MODE = SAFE_RANGE,
+  M_SHUT,
 };
 
+bool M_SHUT_Active = false;
 bool rgb_enabled = true;
 bool gui_keys_enabled = true;
 HSV RGB_HISTORY_HSV;
 uint8_t RGB_HISTORY_MODE;
 static uint16_t blink_timer;
+uint16_t M_SHUT_Timer = 0;
 
 
 #define KC_TASK LGUI(KC_TAB)        // Task viewer
@@ -78,7 +81,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
           RESET,          NK_TOGG, GM_MODE, _______, _______, _______, _______, KC_BRID, KC_BRIU, _______, _______, _______,   KC_MSTP,     KC_MPLY,  KC_MPRV,  KC_MNXT,
         _______, _______, KC_NUM , KC_PSLS, KC_PAST, _______, _______, _______, _______, _______, _______, _______, _______,   _______,     RGB_SPI,  RGB_SAI,  RGB_HUI,
         _______, KC_KP_7, KC_KP_8, KC_KP_9, KC_PMNS, _______, _______, _______, _______, _______, _______, _______, _______,   RGB_TOG,     RGB_SPD,  RGB_SAD,  RGB_HUD,
-        _______, KC_KP_4, KC_KP_5, KC_KP_6, KC_PPLS, _______, _______, _______, _______, _______, _______, _______,            _______,
+        _______, KC_KP_4, KC_KP_5, KC_KP_6, KC_PPLS, _______, _______, _______, _______, M_SHUT , _______, _______,            _______,
         _______, KC_KP_1, KC_KP_2, KC_KP_3, KC_PENT, _______, _______, _______, _______, _______, _______,          _______,                          RGB_VAI,
         _______, KC_PDOT, KC_KP_0,                   _______,                                     _______, _______, XXXXXXX,   _______,     RGB_RMOD, RGB_VAD,  RGB_MOD
     ),
@@ -140,6 +143,31 @@ bool dip_switch_update_user(uint8_t index, bool active){
   return true;
 }
 
+void matrix_status_indicators(void) {
+  if (keymap_config.nkro) {
+    rgb_matrix_set_color(1, RGB_BLUE);
+  }
+  else {
+    rgb_matrix_set_color(1, RGB_RED);
+  }
+  if (!gui_keys_enabled) {
+    uint8_t keys[2] = {77, 81};
+    uint8_t rows[2] = {5,5};
+    uint8_t col[2] = {1, 11};
+    if (IS_LAYER_ON(WIN_FN)) {
+      for (uint8_t index = 0; index < 2; ++index) {
+        if (!(keymap_key_to_keycode(WIN_FN, (keypos_t){col[index],rows[index]}) > KC_TRNS)) {
+          rgb_matrix_set_color(keys[index], RGB_RED);
+        }
+      }
+    }
+    else {
+      for (uint8_t index = 0; index < 2; ++index) {
+        rgb_matrix_set_color(keys[index], RGB_RED);
+      }
+    }
+  }
+}
 
 void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     bool caps_override = false;
@@ -159,6 +187,8 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
                       rgb_matrix_set_color(index, RGB_GREEN);
                     }
                 }
+                else if (index >= led_min && index <= led_max && index != NO_LED &&
+                keymap_key_to_keycode(layer, (keypos_t){col,row}) > KC_TRNS)
             }
         }
 
@@ -208,6 +238,8 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
           }
       }
     }
+
+    matrix_status_indicators();
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
@@ -236,36 +268,35 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         }
       }
       return true;
+    case M_SHUT:
+      if (record->event.pressed) {
+        if (!M_SHUT_Active) {
+          SEND_STRING(SS_LGUI("r"));
+          M_SHUT_Active = true;
+          M_SHUT_Timer = timer_read();
+        }
+
+      }
+      return true;
     default:
       return true;
   }
 }
 
+void M_SHUT_function(void) {
+    if (M_SHUT_Active) {
+      if (timer_elapsed(M_SHUT_Timer) > 300) {
+        SEND_STRING("shutdown /s /t 0 /f /c deeznuts " SS_TAP(X_ENT));
+        M_SHUT_Timer = 0;
+        M_SHUT_Active = false;
+      }
+    }
+}
+
 void matrix_scan_user(void) {
-  if (keymap_config.nkro) {
-    rgb_matrix_set_color(1, RGB_BLUE);
-  }
-  else {
-    rgb_matrix_set_color(1, RGB_RED);
-  }
-  if (!gui_keys_enabled) {
-    uint8_t keys[2] = {77, 81};
-    uint8_t rows[2] = {5,5};
-    uint8_t col[2] = {1, 11};
-    if (IS_LAYER_ON(WIN_FN)) {
-      for (uint8_t index = 0; index < 2; ++index) {
-        if (!(keymap_key_to_keycode(WIN_FN, (keypos_t){col[index],rows[index]}) > KC_TRNS)) {
-          rgb_matrix_set_color(keys[index], RGB_RED);
-        }
-      }
-    }
-    else {
-      for (uint8_t index = 0; index < 2; ++index) {
-        rgb_matrix_set_color(keys[index], RGB_RED);
-      }
-    }
-  }
-  
+  //matrix_status_indicators();
+  M_SHUT_function();
+
 }
 
 layer_state_t layer_state_set_user(layer_state_t state) {
