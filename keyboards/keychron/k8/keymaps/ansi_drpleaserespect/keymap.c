@@ -180,15 +180,23 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
         for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
             for (uint8_t col = 0; col < MATRIX_COLS; ++col) {
                 uint8_t index = g_led_config.matrix_co[row][col];
-
+                uint16_t keycode = keymap_key_to_keycode(layer, (keypos_t){col,row});
                 if (index >= led_min && index <= led_max && index != NO_LED &&
-                keymap_key_to_keycode(layer, (keypos_t){col,row}) > KC_TRNS) {
-                    if (index != 1 || index != 0 || index != 2 ) {
-                      rgb_matrix_set_color(index, RGB_GREEN);
+                    keycode > KC_TRNS) {
+                    switch(keycode) {
+                      case RESET:
+                        break;
+                      case NK_TOGG:
+                        break;
+                      case GM_MODE:
+                        break;
+                      case M_SHUT:
+                        break;
+                      default:
+                        rgb_matrix_set_color(index, RGB_GREEN);
+                        break;
                     }
                 }
-                else if (index >= led_min && index <= led_max && index != NO_LED &&
-                keymap_key_to_keycode(layer, (keypos_t){col,row}) > KC_TRNS)
             }
         }
 
@@ -201,6 +209,7 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
 
         if (timer_elapsed(blink_timer) >= 0 && timer_elapsed(blink_timer) <= 100) {
           rgb_matrix_set_color(0, RGB_RED);
+          rgb_matrix_set_color(59, RGB_RED);
 
           if (gui_keys_enabled) {
             rgb_matrix_set_color(2, RGB_RED);
@@ -216,6 +225,8 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
           }
           rgb_matrix_set_color(0, RGB_BLACK);
           rgb_matrix_set_color(2, RGB_BLACK);
+          rgb_matrix_set_color(59, RGB_BLACK);
+          
 
         }
     }
