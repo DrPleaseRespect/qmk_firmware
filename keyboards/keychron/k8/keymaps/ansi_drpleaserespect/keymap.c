@@ -33,13 +33,18 @@ enum custom_keycodes {
   M_SHUT,
 };
 
-bool M_SHUT_Active = false;
+
+bool init_eeprom = false; // Only Sets to True if EEPROM has been Reset
+bool Macro_Active = false;
 bool rgb_enabled = true;
 bool gui_keys_enabled = true;
+
+
 HSV RGB_HISTORY_HSV;
 uint8_t RGB_HISTORY_MODE;
-static uint16_t blink_timer;
-uint16_t M_SHUT_Timer = 0;
+uint16_t blink_timer;
+uint16_t Macro_Timer = 0; // Initialize Macro Timer Used for Macro Time Delayed Functions
+uint16_t macro_keycode; // Keycode of Macro
 
 
 #define KC_TASK LGUI(KC_TAB)        // Task viewer
@@ -144,17 +149,21 @@ bool dip_switch_update_user(uint8_t index, bool active){
 }
 
 void matrix_status_indicators(void) {
+  // -SECTION START- NKRO INDICATOR
   if (keymap_config.nkro) {
     rgb_matrix_set_color(1, RGB_BLUE);
   }
   else {
     rgb_matrix_set_color(1, RGB_RED);
   }
+  // -SECTION END-
+
+  // -SECTION START- GAME MODE WINDOWS KEY INDICATORS
   if (!gui_keys_enabled) {
-    uint8_t keys[2] = {77, 81};
-    uint8_t rows[2] = {5,5};
-    uint8_t col[2] = {1, 11};
-    if (IS_LAYER_ON(WIN_FN)) {
+    uint8_t keys[2] = {77, 81}; // Specific Coordinates for K8
+    uint8_t rows[2] = {5,5};    // Specific Coordinates for K8
+    uint8_t col[2] = {1, 11};   // Specific Coordinates for K8
+    if (get_highest_layer(layer_state) > 0) {
       for (uint8_t index = 0; index < 2; ++index) {
         if (!(keymap_key_to_keycode(WIN_FN, (keypos_t){col[index],rows[index]}) > KC_TRNS)) {
           rgb_matrix_set_color(keys[index], RGB_RED);
@@ -167,16 +176,18 @@ void matrix_status_indicators(void) {
       }
     }
   }
+  // -SECTION END-
 }
 
 void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     bool caps_override = false;
-    //static uint16_t blink_timer;
-    
+
     if (IS_LAYER_ON(WIN_FN)) {
 
         caps_override = true;
         uint8_t layer = get_highest_layer(layer_state);
+
+        // -SECTION START- LAYER INDICATOR FOR CONFIGURED KEYS
         for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
             for (uint8_t col = 0; col < MATRIX_COLS; ++col) {
                 uint8_t index = g_led_config.matrix_co[row][col];
@@ -199,23 +210,27 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
                 }
             }
         }
+        // -SECTION END-
 
+        // -SECTION START-  NUMLOCK INDICATOR
         if (host_keyboard_led_state().num_lock) {
           rgb_matrix_set_color(18, RGB_GREEN);
         }
         else {
           rgb_matrix_set_color(18, RGB_RED);
         }
+        // -SECTION END-
 
-        if (timer_elapsed(blink_timer) >= 0 && timer_elapsed(blink_timer) <= 100) {
-          rgb_matrix_set_color(0, RGB_RED);
+        // -SECTION START-  BLINKING RGB LIGHTS
+        if (timer_elapsed(blink_timer) >= 0 && timer_elapsed(blink_timer) <= 100) { 
+          rgb_matrix_set_color(0, RGB_RED); 
           rgb_matrix_set_color(59, RGB_RED);
 
-          if (gui_keys_enabled) {
-            rgb_matrix_set_color(2, RGB_RED);
+          if (gui_keys_enabled) { // Game Mode Indicator 
+            rgb_matrix_set_color(2, RGB_RED); // DISABLED
           }
           else {
-            rgb_matrix_set_color(2, RGB_GREEN);
+            rgb_matrix_set_color(2, RGB_GREEN); // ENABLED
           }
         }
 
@@ -229,11 +244,9 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
           
 
         }
+        // -SECTION END-
     }
-    else {
-      caps_override = false;
-    }
-
+    // -SECTION START- CAPS LOCK INDICATOR (HIGHLIGHT ALL ALPHA CHARACTERS)
     if (caps_override == false) {
       if (host_keyboard_led_state().caps_lock) {
           const uint8_t SIZE = 3;
@@ -249,9 +262,42 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
           }
       }
     }
+    // -SECTION END-
 
+    // -SECTION START- CUSTOM MATRIX STATUS INDICATORS
     matrix_status_indicators();
+    // -SECTION END-
 }
+
+void Macro_Initialize(uint16_t keycode) {
+  macro_keycode = keycode;
+  Macro_Active = true;
+}
+
+void Macro_Start_Timer(void) {
+  Macro_Timer = timer_read();
+}
+
+void Macro_End(void) {
+  Macro_Active = false;
+  Macro_Timer = 0;
+}
+
+void Macro_functions(void) {
+  // Function For Time Delayed Macros
+  if (Macro_Active) {
+    switch(macro_keycode) {
+      case M_SHUT:
+        if (timer_elapsed(Macro_Timer) > 300) {
+          SEND_STRING("shutdown /s /t 0 /f /c deeznuts " SS_TAP(X_ENT));
+          Macro_End();
+        }
+      default:
+        return;
+      }
+    }
+}
+
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   switch (keycode) {
@@ -281,12 +327,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       return true;
     case M_SHUT:
       if (record->event.pressed) {
-        if (!M_SHUT_Active) {
+        if (!Macro_Active) {
+          Macro_Initialize(keycode);
           SEND_STRING(SS_LGUI("r"));
-          M_SHUT_Active = true;
-          M_SHUT_Timer = timer_read();
+          Macro_Start_Timer();
         }
-
       }
       return true;
     default:
@@ -294,19 +339,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   }
 }
 
-void M_SHUT_function(void) {
-    if (M_SHUT_Active) {
-      if (timer_elapsed(M_SHUT_Timer) > 300) {
-        SEND_STRING("shutdown /s /t 0 /f /c deeznuts " SS_TAP(X_ENT));
-        M_SHUT_Timer = 0;
-        M_SHUT_Active = false;
-      }
-    }
-}
+
 
 void matrix_scan_user(void) {
   //matrix_status_indicators();
-  M_SHUT_function();
+  Macro_functions();
 
 }
 
@@ -330,10 +367,19 @@ void keyboard_pre_init_user(void) {
   blink_timer = timer_read();
 }
 
+void eeconfig_init_user(void) {
+  init_eeprom = true; // Enabled due to reset of EEPROM
+}
+
 void keyboard_post_init_user(void) {
   // Customise these values to desired behaviour
   //debug_enable=true;
   //debug_matrix=true;
   //debug_keyboard=true;
   //debug_mouse=true;
+  if (init_eeprom) { // Only Execute if eeprom is reset
+    rgb_matrix_enable();
+    rgb_matrix_mode(RGB_MATRIX_SOLID_COLOR);
+    rgb_matrix_sethsv(180, 255, 255);
+  }
 }
