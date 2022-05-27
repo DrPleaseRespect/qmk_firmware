@@ -272,7 +272,22 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
 
         case MACRO:
           caps_override = true;
-          //rgb_matrix_set_color_all(RGB_BLACK);
+          // -SECTION START- LAYER INDICATOR FOR CONFIGURED KEYS IN MACRO
+          for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
+              for (uint8_t col = 0; col < MATRIX_COLS; ++col) {
+                  uint8_t index = g_led_config.matrix_co[row][col];
+                  uint16_t keycode = keymap_key_to_keycode(layer, (keypos_t){col,row});
+                  if (index >= led_min && index <= led_max && index != NO_LED &&
+                      keycode > KC_TRNS) {
+                      switch(keycode) {
+                        default:
+                          rgb_matrix_set_color(index, RGB_RED);
+                          break;
+                      }
+                  }
+              }
+          }
+          // -SECTION END-
           break;
 
         default:
