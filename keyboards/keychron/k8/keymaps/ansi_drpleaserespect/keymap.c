@@ -585,7 +585,7 @@ void keyboard_post_init_user(void) {
 #ifdef RAW_ENABLE
 void raw_hid_receive(uint8_t *data, uint8_t length) {
     switch (data[0]) {
-        case 1:
+        case HID_SET_COLOR:
         {
             uint8_t h = data[1];
             uint8_t s = data[2];
