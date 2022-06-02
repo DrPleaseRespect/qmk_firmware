@@ -43,6 +43,7 @@ enum raw_hid_functions {
   HID_GET_AVAILABLE_MODES,
   HID_GET_CURRENT_RGB_SETTINGS,
   HID_SAVE_RGB_SETTINGS,
+  HID_VOLUME,
 };
 #endif
 
@@ -187,7 +188,7 @@ bool init_eeprom = false; // Only Sets to True if EEPROM has been Reset
 bool Macro_Active = false;
 bool rgb_enabled = true;
 bool gui_keys_enabled = true;
-
+uint8_t SystemVolume;
 
 
 uint16_t blink_timer;
@@ -291,6 +292,33 @@ void disable_rgb_tracked(bool status) {
   }
 }
 
+void VolumeLevelIndicator(bool pressed){
+    static uint16_t Volume_Timer = 0;
+    uint8_t rgb_value; 
+    uint8_t id;
+    #define VolumeSTART 17
+    if (pressed == true){
+        Volume_Timer = timer_read();
+    }
+    if (timer_elapsed(Volume_Timer) < 1000) {
+        uint8_t normalized_volume = (uint16_t)(SystemVolume * 10) / 100;
+        rgb_value = ((SystemVolume % 10) * 255) / (10 - 1);    
+        if (normalized_volume == 0) {
+            id = 0 + VolumeSTART;
+            rgb_matrix_set_color(id, 0, 0, rgb_value);
+
+        }
+        for (uint8_t index = 0; index < normalized_volume ; ++index) {
+            id = index + VolumeSTART;
+            if (index >= 9) {
+                rgb_value = 255;
+            }
+            rgb_matrix_set_color(id, (255 - rgb_value), rgb_value, 0);
+            //rgb_matrix_set_color(5, 255,255,255);
+
+       }
+    }
+}
 
 
 bool dip_switch_update_user(uint8_t index, bool active){
@@ -317,17 +345,20 @@ bool dip_switch_update_user(uint8_t index, bool active){
 }
 
 void matrix_status_indicators(void) {
-  // -SECTION START- NKRO INDICATOR
-  if (keymap_config.nkro) {
-    rgb_matrix_set_color(1, RGB_BLUE);
-  }
-  else {
-    rgb_matrix_set_color(1, RGB_RED);
-  }
-  // -SECTION END-
 
-  // -SECTION START- GAME MODE WINDOWS KEY INDICATORS
-  if (!gui_keys_enabled) {
+    VolumeLevelIndicator(false);
+
+    // -SECTION START- NKRO INDICATOR
+    if (keymap_config.nkro) {
+    rgb_matrix_set_color(1, RGB_BLUE);
+    }
+    else {
+    rgb_matrix_set_color(1, RGB_RED);
+    }
+    // -SECTION END-
+
+    // -SECTION START- GAME MODE WINDOWS KEY INDICATORS
+    if (!gui_keys_enabled) {
     // I can make this better but for performance's sake i'll do it this way..
     uint8_t keys[2] = {77, 81}; // Specific Coordinates for K8
     uint8_t rows[2] = {5,5};    // Specific Coordinates for K8
@@ -346,9 +377,9 @@ void matrix_status_indicators(void) {
         rgb_matrix_set_color(keys[index], RGB_RED);
       }
     }
-  }
-  // -SECTION END-
-}
+    }
+    // -SECTION END-
+    }
 
 void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     bool caps_override = false;
@@ -676,6 +707,12 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
             rgb_matrix_mode(currentmode);
             rgb_matrix_set_speed(currentspeed);
             rgb_matrix_sethsv(currenthsv.h,currenthsv.s,currenthsv.v);
+            break;
+        }
+        case HID_VOLUME:
+        {
+            SystemVolume = data[1];
+            VolumeLevelIndicator(true);
             break;
         }
         default:
