@@ -19,6 +19,7 @@
 
 #include QMK_KEYBOARD_H
 #include "raw_hid.h"
+#include "lib/lib8tion/lib8tion.h"
 
 // Each layer gets a name for readability, which is then used in the keymap matrix below.
 // The underscores don't mean anything - you can have a layer called STUFF or any other name.
@@ -243,7 +244,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
          XXXXXXX,          XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,      XXXXXXX,  XXXXXXX,  XXXXXXX,
          XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,      XXXXXXX,  XXXXXXX,  XXXXXXX,
          XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,      XXXXXXX,  XXXXXXX,  XXXXXXX,
-         XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,          XXXXXXX, 
+         XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,          XXXXXXX,
          XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,          XXXXXXX,                         XXXXXXX,
          XXXXXXX, XXXXXXX, XXXXXXX,                   XXXXXXX,                                     XXXXXXX, XXXXXXX, XXXXXXX,   XXXXXXX,     XXXXXXX, XXXXXXX,  XXXXXXX
     ),
@@ -264,6 +265,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     +-------------------------------------------------------------------------------------------+
     */
 };
+// get_millisecond_timer function for lib8tion
+uint32_t get_millisecond_timer(void) {
+  return timer_read32();
+}
 
 void disable_rgb_untracked(bool status) {
   static HSV RGB_HISTORY_HSV;
@@ -294,7 +299,7 @@ void disable_rgb_tracked(bool status) {
 
 void VolumeLevelIndicator(bool pressed){
     static uint16_t Volume_Timer = 0;
-    uint8_t rgb_value; 
+    uint8_t rgb_value;
     uint8_t id;
     #define VolumeSTART 17
     if (pressed == true){
@@ -302,7 +307,7 @@ void VolumeLevelIndicator(bool pressed){
     }
     if (timer_elapsed(Volume_Timer) < 1000) {
         uint8_t normalized_volume = (uint16_t)(SystemVolume * 10) / 100;
-        rgb_value = ((SystemVolume % 10) * 255) / (10 - 1);    
+        rgb_value = ((SystemVolume % 10) * 255) / (10 - 1);
         if (normalized_volume == 0) {
             id = 0 + VolumeSTART;
             rgb_matrix_set_color(id, 0, 0, rgb_value);
@@ -346,19 +351,21 @@ bool dip_switch_update_user(uint8_t index, bool active){
 
 void matrix_status_indicators(void) {
 
-    VolumeLevelIndicator(false);
+  VolumeLevelIndicator(false);
 
-    // -SECTION START- NKRO INDICATOR
-    if (keymap_config.nkro) {
+  // -SECTION START- NKRO INDICATOR
+  if (keymap_config.nkro) {
     rgb_matrix_set_color(1, RGB_BLUE);
-    }
-    else {
+  }
+  else {
     rgb_matrix_set_color(1, RGB_RED);
-    }
-    // -SECTION END-
+  }
+  // -SECTION END-
 
-    // -SECTION START- GAME MODE WINDOWS KEY INDICATORS
-    if (!gui_keys_enabled) {
+  // -SECTION START- GAME MODE WINDOWS KEY INDICATORS
+  uint8_t beat_sin = beatsin8(100, 0, 255, 0, 0); // 100BPM Sine Wave Generator (8-bit)
+
+  if (!gui_keys_enabled) {
     // I can make this better but for performance's sake i'll do it this way..
     uint8_t keys[2] = {77, 81}; // Specific Coordinates for K8
     uint8_t rows[2] = {5,5};    // Specific Coordinates for K8
@@ -368,13 +375,13 @@ void matrix_status_indicators(void) {
       for (uint8_t index = 0; index < 2; ++index) {
         uint16_t keycode = keymap_key_to_keycode(layer, (keypos_t){col[index],rows[index]});
         if ((keycode == KC_TRNS)) {
-          rgb_matrix_set_color(keys[index], RGB_RED);
+          rgb_matrix_set_color(keys[index], beat_sin, 0, 0);
         }
       }
     }
     else {
       for (uint8_t index = 0; index < 2; ++index) {
-        rgb_matrix_set_color(keys[index], RGB_RED);
+        rgb_matrix_set_color(keys[index], beat_sin, 0, 0);
       }
     }
     }
@@ -424,28 +431,27 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
           // -SECTION END-
 
           // -SECTION START-  BLINKING RGB LIGHTS
-          if (timer_elapsed(blink_timer) >= 0 && timer_elapsed(blink_timer) <= 100) { 
-            rgb_matrix_set_color(0, RGB_RED); 
-            rgb_matrix_set_color(59, RGB_RED);
-
-            if (gui_keys_enabled) { // Game Mode Indicator 
-              rgb_matrix_set_color(2, RGB_RED); // DISABLED
-            }
-            else {
-              rgb_matrix_set_color(2, RGB_GREEN); // ENABLED
-            }
+          if (timer_elapsed(blink_timer) >= 0 && timer_elapsed(blink_timer) <= 100) {
+            rgb_matrix_set_color(0, RGB_RED);
           }
-
           else {
             if (timer_elapsed(blink_timer) >= 200) {
               blink_timer = timer_read();
             }
             rgb_matrix_set_color(0, RGB_BLACK);
-            rgb_matrix_set_color(2, RGB_BLACK);
-            rgb_matrix_set_color(59, RGB_BLACK);
-            
+
 
           }
+          uint8_t beat_sin = beatsin8(200, 0, 255, 0, 0); // 200BPM Sine Wave Generator (8-bit)
+          if (gui_keys_enabled) { // Game Mode Indicator
+            rgb_matrix_set_color(2, beat_sin, 0, 0); // DISABLED COLOR: RED
+          }
+          else {
+            rgb_matrix_set_color(2, 0, beat_sin, 0); // ENABLED COLOR: BLUE
+          }
+          rgb_matrix_set_color(59, beat_sin, 0, 0);
+
+
           // -SECTION END-
           break;
 
