@@ -207,9 +207,12 @@ void matrix_status_indicators(void) {
     rgb_matrix_set_color(1, RGB_RED);
   }
   // -SECTION END-
-  uint8_t beat_sin = beatsin8(100, 0, 255, 0, 0); // 100BPM Sine Wave Generator (8-bit)
+
   // -SECTION START- GAME MODE WINDOWS KEY INDICATORS
   // AND SPACE CADET KEY INDICATORS
+
+  uint8_t beat_sin = beatsin8(100, 0, 255, 0, 0); // 100BPM Sine Wave Generator (8-bit)
+  
   if (!gui_keys_enabled || space_cadet_keys) {
     // I can make this better but for performance's sake i'll do it this way..
     uint8_t keys[4] = {77, 81, 63, 74}; // Specific Coordinates for K8
