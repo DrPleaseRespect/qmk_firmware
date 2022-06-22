@@ -155,7 +155,7 @@ void VolumeLevelIndicator(bool pressed){
         uint8_t normalized_volume = (uint16_t)(SystemVolume * 10) / 100;
         rgb_value = ((SystemVolume % 10) * 255) / (10 - 1);
         if (normalized_volume == 0) {
-            id = 0 + VolumeSTART;
+            id = 0 + VolumeSTART; // ADD OFFSET
             rgb_matrix_set_color(id, 0, 0, rgb_value);
 
         }
@@ -165,7 +165,6 @@ void VolumeLevelIndicator(bool pressed){
                 rgb_value = 255;
             }
             rgb_matrix_set_color(id, (255 - rgb_value), rgb_value, 0);
-            //rgb_matrix_set_color(5, 255,255,255);
 
        }
     }
@@ -195,6 +194,7 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
             rgb_matrix_mode_noeeprom(mode);
             break;
         }
+        // THIS RETURNS A RESULT TO THE HOST SYSTEM
         case HID_GET_AVAILABLE_MODES:
         {
             // THIS CODE IS S**T I KNOW
@@ -230,7 +230,7 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
                 else if(index > selected_num) {
                     break;
                 }
-                uint8_t buffer[RAW_EPSIZE] = {0}; // RAW_EPSIZE = 32
+                uint8_t buffer[RAW_EPSIZE] = {0};
                 for (uint8_t i = start; i < end; i++) {
                     uint8_t loop_length = (end - start);
                     uint8_t array_index = (i / loop_length);
@@ -243,6 +243,7 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
             }
             break;
         }
+        // THIS RETURNS A RESULT TO THE HOST SYSTEM
         case HID_GET_CURRENT_RGB_SETTINGS:
         {
             HSV currenthsv = rgb_matrix_get_hsv();
