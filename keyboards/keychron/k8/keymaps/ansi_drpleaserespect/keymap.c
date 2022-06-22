@@ -34,13 +34,14 @@ enum layer_names {
 enum custom_keycodes {
   GM_MODE = SAFE_RANGE,
   M_SHUT,
+  S_CADET,
 };
 
 bool init_eeprom = false; // Only Sets to True if EEPROM has been Reset
 bool Macro_Active = false;
 bool rgb_enabled = true;
 bool gui_keys_enabled = true;
-
+bool space_cadet_keys = false;
 
 uint16_t blink_timer;
 uint16_t Macro_Timer = 0; // Initialize Macro Timer Used for Macro Time Delayed Functions
@@ -78,12 +79,12 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_MINS, KC_EQL,    KC_BSPC,     KC_INS,   KC_HOME,  KC_PGUP,
         KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_LBRC, KC_RBRC,   KC_BSLS,     KC_DEL,   KC_END,   KC_PGDN,
         KC_CAPS, KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,            KC_ENT,
-        KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH,          KC_RSFT,                          KC_UP,
+        KC_LSPO, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH,          KC_RSPC,                          KC_UP,
         KC_LCTL, KC_LGUI, KC_LALT,                   KC_SPC,                                      KC_RALT, KC_RGUI, MO(WIN_FN),KC_RCTL,     KC_LEFT,  KC_DOWN,  KC_RGHT
     ),
 
   [WIN_FN] = LAYOUT_tkl_ansi(
-          RESET,          NK_TOGG, GM_MODE, _______, _______, _______, _______, KC_BRID, KC_BRIU, _______, _______, _______,   KC_MSTP,     KC_MPLY,  KC_MPRV,  KC_MNXT,
+          RESET,          NK_TOGG, GM_MODE, S_CADET, _______, _______, _______, KC_BRID, KC_BRIU, _______, _______, _______,   KC_MSTP,     KC_MPLY,  KC_MPRV,  KC_MNXT,
         _______, _______, KC_NUM , KC_PSLS, KC_PAST, _______, _______, _______, _______, _______, _______, _______, _______,   _______,     RGB_SPI,  RGB_SAI,  RGB_HUI,
         _______, KC_KP_7, KC_KP_8, KC_KP_9, KC_PMNS, _______, _______, _______, _______, _______, _______, _______, _______,   RGB_TOG,     RGB_SPD,  RGB_SAD,  RGB_HUD,
         _______, KC_KP_4, KC_KP_5, KC_KP_6, KC_PPLS, _______, _______, _______, _______, M_SHUT , _______, _______,            _______,
@@ -147,6 +148,32 @@ void disable_rgb_tracked(bool status) {
   }
 }
 
+// TOGGLE FOR SPACE CADET KEY
+bool space_cadet_key_function(uint16_t keycode, bool pressed){
+    if (space_cadet_keys) {
+      return true;
+    }
+
+    // MAIN LOGIC
+    if (pressed) {
+      switch(keycode) {
+        case KC_LSPO:
+          register_code(KC_LSFT);
+        case KC_RSPC:
+          register_code(KC_RSFT);
+      }
+    }
+    else {
+      switch(keycode) {
+        case KC_LSPO:
+          unregister_code(KC_LSFT);
+        case KC_RSPC:
+          unregister_code(KC_RSFT);
+      }
+    }
+    return false;
+}
+
 bool dip_switch_update_user(uint8_t index, bool active){
   switch(index){
     case 0:
@@ -176,7 +203,7 @@ void matrix_status_indicators(void) {
   #ifdef RAW_ENABLE
   VolumeLevelIndicator(false);
   #endif
-  
+
 
   // -SECTION START- NKRO INDICATOR
   if (keymap_config.nkro) {
@@ -188,30 +215,47 @@ void matrix_status_indicators(void) {
   // -SECTION END-
 
   // -SECTION START- GAME MODE WINDOWS KEY INDICATORS
+  // AND SPACE CADET KEY INDICATORS
+
   uint8_t beat_sin = beatsin8(100, 0, 255, 0, 0); // 100BPM Sine Wave Generator (8-bit)
 
-  if (!gui_keys_enabled) {
+  if (!gui_keys_enabled || space_cadet_keys) {
     // I can make this better but for performance's sake i'll do it this way..
-    uint8_t keys[2] = {77, 81}; // Specific Coordinates for K8
-    uint8_t rows[2] = {5,5};    // Specific Coordinates for K8
-    uint8_t col[2] = {1, 11};   // Specific Coordinates for K8
+    uint8_t keys[4] = {77, 81, 63, 74}; // Specific Coordinates for K8
+    uint8_t rows[4] = {5,5, 4, 4};    // Specific Coordinates for K8
+    uint8_t col[4] = {1, 11, 0, 13};   // Specific Coordinates for K8
     uint8_t layer = get_highest_layer(layer_state);
     if (layer > 0) {
-      for (uint8_t index = 0; index < 2; ++index) {
+      for (uint8_t index = 0; index < 4; ++index) {
         uint16_t keycode = keymap_key_to_keycode(layer, (keypos_t){col[index],rows[index]});
         if ((keycode == KC_TRNS)) {
-          rgb_matrix_set_color(keys[index], beat_sin, 0, 0);
+          // GAME MODE
+          if (!gui_keys_enabled && index < 2){
+            rgb_matrix_set_color(keys[index], beat_sin, 0, 0);
+          }
+          // SPACE CADET
+          if (space_cadet_keys && index > 1){
+            rgb_matrix_set_color(keys[index], beat_sin, 0, 0);
+          }
         }
       }
     }
     else {
-      for (uint8_t index = 0; index < 2; ++index) {
-        rgb_matrix_set_color(keys[index], beat_sin, 0, 0);
+      for (uint8_t index = 0; index < 4; ++index) {
+          // GAME MODE
+          if (!gui_keys_enabled && index < 2){
+            rgb_matrix_set_color(keys[index], beat_sin, 0, 0);
+          }
+          // SPACE CADET
+          if (space_cadet_keys && index > 1){
+            rgb_matrix_set_color(keys[index], beat_sin, 0, 0);
+          }
       }
     }
-    }
-    // -SECTION END-
-    }
+  }
+
+  // -SECTION END-
+}
 
 void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     bool caps_override = false;
@@ -220,30 +264,32 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     switch (layer) {
         case WIN_FN:
           caps_override = true;
-
+          const uint16_t blocked_keys[] = {
+            RESET, NK_TOGG, GM_MODE, M_SHUT, S_CADET,
+          };
+          const uint8_t blocked_keys_size = sizeof(blocked_keys) / sizeof(blocked_keys[0]);
           // -SECTION START- LAYER INDICATOR FOR CONFIGURED KEYS IN WIN_FN
           for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
               for (uint8_t col = 0; col < MATRIX_COLS; ++col) {
                   uint8_t index = g_led_config.matrix_co[row][col];
                   uint16_t keycode = keymap_key_to_keycode(layer, (keypos_t){col,row});
-                  if (index >= led_min && index <= led_max && index != NO_LED &&
+                  if (index >= led_min &&
+                      index <= led_max &&
+                      index != NO_LED &&
                       keycode > KC_TRNS) {
-                      switch(keycode) {
-                        case RESET:
-                          break;
-                        case NK_TOGG:
-                          break;
-                        case GM_MODE:
-                          break;
-                        case M_SHUT:
-                          break;
-                        default:
+                        // DON'T SET RGB COLOR OF KEYS THAT ARE IN THE BLOCKED_KEYS ARRAY
+                        bool blocked_key = false;
+                        for (uint8_t block_index = 0; block_index < blocked_keys_size; ++block_index) {
+                          if (blocked_keys[block_index] == keycode) {
+                            blocked_key = true;
+                          }
+                        }
+                        if (!blocked_key) {
                           rgb_matrix_set_color(index, RGB_GREEN);
-                          break;
                       }
+                    }
                   }
               }
-          }
           // -SECTION END-
 
           // -SECTION START-  NUMLOCK INDICATOR
@@ -268,13 +314,24 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
 
           }
           uint8_t beat_sin = beatsin8(200, 0, 255, 0, 0); // 200BPM Sine Wave Generator (8-bit)
-          if (gui_keys_enabled) { // Game Mode Indicator
+          // Game Mode Indicator
+          if (gui_keys_enabled) {
             rgb_matrix_set_color(2, beat_sin, 0, 0); // DISABLED COLOR: RED
           }
           else {
-            rgb_matrix_set_color(2, 0, beat_sin, 0); // ENABLED COLOR: BLUE
+            rgb_matrix_set_color(2, 0, beat_sin, 0); // ENABLED COLOR: GREEN
           }
+
+          // M SHUT MACRO
           rgb_matrix_set_color(59, beat_sin, 0, 0);
+
+          // SPACE CADET KEY
+          if (space_cadet_keys) {
+            rgb_matrix_set_color(3, 0, beat_sin, 0); // ENABLED COLOR: GREEN
+          }
+          else {
+            rgb_matrix_set_color(3, beat_sin, 0, 0); // DISABLED COLOR: RED
+          }
 
 
           // -SECTION END-
@@ -392,6 +449,23 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
           Macro_Initialize(keycode);
           SEND_STRING(SS_LGUI("r"));
           Macro_Start_Timer();
+        }
+      }
+      return true;
+    // SPACE CADET SYSTEM
+    case KC_LSPO:
+      return space_cadet_key_function(keycode, record->event.pressed);
+    case KC_RSPC:
+      return space_cadet_key_function(keycode, record->event.pressed);
+    case S_CADET:
+      if (record->event.pressed) {
+        unregister_code16(KC_LSPO);
+        unregister_code16(KC_RSPC);
+        if (space_cadet_keys) {
+          space_cadet_keys = false;
+        }
+        else {
+          space_cadet_keys = true;
         }
       }
       return true;
