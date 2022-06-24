@@ -57,6 +57,9 @@ uint16_t macro_keycode; // Keycode of Macro
 #define KC_SIRI LGUI(KC_SPC)        // Siri
 #define KC_MSNP LSFT(LGUI(KC_4))    // Mac snip tool
 
+#define MVL_FN  MO(WIN_FN)
+#define MV_MACR MO(MACRO)
+
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     /*	Windows layout
     +--------------------------------------------------------------------------+----------------+
@@ -80,7 +83,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_LBRC, KC_RBRC,   KC_BSLS,     KC_DEL,   KC_END,   KC_PGDN,
         KC_CAPS, KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,            KC_ENT,
         KC_LSPO, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH,          KC_RSPC,                          KC_UP,
-        KC_LCTL, KC_LGUI, KC_LALT,                   KC_SPC,                                      KC_RALT, KC_RGUI, MO(WIN_FN),KC_RCTL,     KC_LEFT,  KC_DOWN,  KC_RGHT
+        KC_LCTL, KC_LGUI, KC_LALT,                   KC_SPC,                                      KC_RALT, KC_RGUI, MVL_FN,    KC_RCTL,     KC_LEFT,  KC_DOWN,  KC_RGHT
     ),
 
   [WIN_FN] = LAYOUT_tkl_ansi(
@@ -88,7 +91,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         _______, _______, KC_NUM , KC_PSLS, KC_PAST, _______, _______, _______, _______, _______, _______, _______, _______,   _______,     RGB_SPI,  RGB_SAI,  RGB_HUI,
         _______, KC_KP_7, KC_KP_8, KC_KP_9, KC_PMNS, _______, _______, _______, _______, _______, _______, _______, _______,   RGB_TOG,     RGB_SPD,  RGB_SAD,  RGB_HUD,
         _______, KC_KP_4, KC_KP_5, KC_KP_6, KC_PPLS, _______, _______, _______, _______, M_SHUT , _______, _______,            _______,
-        _______, KC_KP_1, KC_KP_2, KC_KP_3, KC_PENT, _______, _______, _______, _______, _______, _______,         MO(MACRO),                         RGB_VAI,
+        _______, KC_KP_1, KC_KP_2, KC_KP_3, KC_PENT, _______, _______, _______, _______, _______, _______,          MV_MACR,                          RGB_VAI,
         _______, KC_PDOT, KC_KP_0,                   _______,                                     _______, _______, XXXXXXX,   _______,     RGB_RMOD, RGB_VAD,  RGB_MOD
     ),
   [MACRO] = LAYOUT_tkl_ansi(
@@ -97,7 +100,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
          XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,      XXXXXXX,  XXXXXXX,  XXXXXXX,
          XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,          XXXXXXX,
          XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,          XXXXXXX,                         XXXXXXX,
-         XXXXXXX, XXXXXXX, XXXXXXX,                   XXXXXXX,                                     XXXXXXX, XXXXXXX, XXXXXXX,   XXXXXXX,     XXXXXXX, XXXXXXX,  XXXXXXX
+         XXXXXXX, XXXXXXX, XXXXXXX,                   XXXXXXX,                                     XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,      XXXXXXX,  XXXXXXX,  XXXXXXX
     ),
 
     /*  Mac layout
@@ -261,36 +264,54 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     bool caps_override = false;
     uint8_t layer = get_highest_layer(layer_state);
 
+    const uint16_t blocked_keys[] = {
+      RESET, NK_TOGG, GM_MODE, M_SHUT, S_CADET,
+    };
+    const uint8_t blocked_keys_size = sizeof(blocked_keys) / sizeof(blocked_keys[0]);
+    // -SECTION START- LAYER INDICATOR
+    if (layer > WIN_BASE) {
+      for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
+        for (uint8_t col = 0; col < MATRIX_COLS; ++col) {
+            uint8_t index = g_led_config.matrix_co[row][col];
+            uint16_t keycode = keymap_key_to_keycode(layer, (keypos_t){col,row});
+            if (index >= led_min &&
+                index <= led_max &&
+                index != NO_LED &&
+                keycode > KC_TRNS) {
+                  // DON'T SET RGB COLOR OF KEYS THAT ARE IN THE BLOCKED_KEYS ARRAY
+                  bool blocked_key = false;
+                  for (uint8_t block_index = 0; block_index < blocked_keys_size; ++block_index) {
+                    if (blocked_keys[block_index] == keycode) {
+                      blocked_key = true;
+                      break; // BREAK OUT ONCE A BLOCKED KEY IS FOUND
+                    }
+                  }
+                  if (!blocked_key) {
+                    switch (layer) {
+                      case WIN_FN:
+                        rgb_matrix_set_color(index, RGB_GREEN);
+                        break;
+                      case MACRO:
+                        rgb_matrix_set_color(index, RGB_RED);
+                        break;
+                      case M_KEYS:
+                        rgb_matrix_set_color(index, RGB_GREEN);
+                        break;
+                      default:
+                        rgb_matrix_set_color(index, RGB_GREEN);
+                        break;
+                    }
+                }
+              }
+            }
+        }
+    }
+    // -SECTION END-
+
+    // -SECTION START- PER-LAYER RGB STUFF
     switch (layer) {
         case WIN_FN:
           caps_override = true;
-          const uint16_t blocked_keys[] = {
-            RESET, NK_TOGG, GM_MODE, M_SHUT, S_CADET,
-          };
-          const uint8_t blocked_keys_size = sizeof(blocked_keys) / sizeof(blocked_keys[0]);
-          // -SECTION START- LAYER INDICATOR FOR CONFIGURED KEYS IN WIN_FN
-          for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
-              for (uint8_t col = 0; col < MATRIX_COLS; ++col) {
-                  uint8_t index = g_led_config.matrix_co[row][col];
-                  uint16_t keycode = keymap_key_to_keycode(layer, (keypos_t){col,row});
-                  if (index >= led_min &&
-                      index <= led_max &&
-                      index != NO_LED &&
-                      keycode > KC_TRNS) {
-                        // DON'T SET RGB COLOR OF KEYS THAT ARE IN THE BLOCKED_KEYS ARRAY
-                        bool blocked_key = false;
-                        for (uint8_t block_index = 0; block_index < blocked_keys_size; ++block_index) {
-                          if (blocked_keys[block_index] == keycode) {
-                            blocked_key = true;
-                          }
-                        }
-                        if (!blocked_key) {
-                          rgb_matrix_set_color(index, RGB_GREEN);
-                      }
-                    }
-                  }
-              }
-          // -SECTION END-
 
           // -SECTION START-  NUMLOCK INDICATOR
           if (host_keyboard_led_state().num_lock) {
@@ -302,6 +323,8 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
           // -SECTION END-
 
           // -SECTION START-  BLINKING RGB LIGHTS
+
+          // RESET LED
           if (timer_elapsed(blink_timer) >= 0 && timer_elapsed(blink_timer) <= 100) {
             rgb_matrix_set_color(0, RGB_RED);
           }
@@ -339,27 +362,17 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
 
         case MACRO:
           caps_override = true;
-          // -SECTION START- LAYER INDICATOR FOR CONFIGURED KEYS IN MACRO
-          for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
-              for (uint8_t col = 0; col < MATRIX_COLS; ++col) {
-                  uint8_t index = g_led_config.matrix_co[row][col];
-                  uint16_t keycode = keymap_key_to_keycode(layer, (keypos_t){col,row});
-                  if (index >= led_min && index <= led_max && index != NO_LED &&
-                      keycode > KC_TRNS) {
-                      switch(keycode) {
-                        default:
-                          rgb_matrix_set_color(index, RGB_RED);
-                          break;
-                      }
-                  }
-              }
-          }
-          // -SECTION END-
+          break;
+
+        case M_KEYS:
+          caps_override = true;
           break;
 
         default:
           break;
     }
+    // -SECTION END-
+
     // -SECTION START- CAPS LOCK INDICATOR (HIGHLIGHT ALL ALPHA CHARACTERS)
     if (caps_override == false) {
       if (host_keyboard_led_state().caps_lock) {
