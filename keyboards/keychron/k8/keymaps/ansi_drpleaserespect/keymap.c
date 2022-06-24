@@ -288,9 +288,6 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
                       case MACRO:
                         rgb_matrix_set_color(index, RGB_RED);
                         break;
-                      case M_KEYS:
-                        rgb_matrix_set_color(index, RGB_GREEN);
-                        break;
                       default:
                         rgb_matrix_set_color(index, RGB_GREEN);
                         break;
@@ -356,10 +353,6 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
           break;
 
         case MACRO:
-          caps_override = true;
-          break;
-
-        case M_KEYS:
           caps_override = true;
           break;
 
