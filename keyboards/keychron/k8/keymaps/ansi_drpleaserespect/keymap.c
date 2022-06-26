@@ -465,21 +465,6 @@ void matrix_scan_user(void) {
 
 }
 
-layer_state_t layer_state_set_user(layer_state_t state) {
-    switch (get_highest_layer(state)) {
-    case WIN_FN:
-        if (!host_keyboard_led_state().num_lock) {
-             tap_code16(KC_NLCK);
-        }
-        break;
-    default: //  for any other layers, or the default layer
-        if (host_keyboard_led_state().num_lock) {
-             tap_code16(KC_NLCK);
-        }
-        break;
-    }
-  return state;
-}
 
 void keyboard_pre_init_user(void) {
   blink_timer = timer_read();
