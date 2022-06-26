@@ -26,8 +26,9 @@
 // entirely and just use numbers.
 enum layer_names {
     WIN_BASE    = 0,
-    WIN_FN      = 1,
-    MACRO       = 2,
+    SPACE_CA    = 1,
+    WIN_FN      = 2,
+    MACRO       = 3,
 };
 
 enum custom_keycodes {
@@ -41,7 +42,6 @@ bool init_eeprom = false; // Only Sets to True if EEPROM has been Reset
 bool Macro_Active = false;
 bool rgb_enabled = true;
 bool gui_keys_enabled = true;
-bool space_cadet_keys = false;
 
 
 uint16_t blink_timer;
@@ -61,6 +61,8 @@ uint16_t macro_keycode; // Keycode of Macro
 #define MVL_FN  MO(WIN_FN)
 #define MV_MACR MO(MACRO)
 
+#define SPACE_CA_STATE IS_LAYER_ON(SPACE_CA)
+
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     /*	Windows layout
     +--------------------------------------------------------------------------+----------------+
@@ -77,16 +79,26 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     |LCTRL| LGUI| LALT |            SPACE            | RALT| RGUI | FN | RCTRL | |LFT |DWN |RGT |
     +--------------------------------------------------------------------------+----------------+
 */
-
-    [WIN_BASE] = LAYOUT_tkl_ansi(
-        KC_ESC,           KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,    KC_F12,      KC_PSCR,  KC_VOLD,  KC_VOLU,
-        KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_MINS, KC_EQL,    KC_BSPC,     KC_INS,   KC_HOME,  KC_PGUP,
-        KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_LBRC, KC_RBRC,   KC_BSLS,     KC_DEL,   KC_END,   KC_PGDN,
-        KC_CAPS, KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,            KC_ENT,
-        KC_LSPO, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH,          KC_RSPC,                          KC_UP,
-        KC_LCTL, KC_LGUI, KC_LALT,                   KC_SPC,                                      KC_RALT, KC_RGUI, MVL_FN,    KC_RCTL,     KC_LEFT,  KC_DOWN,  KC_RGHT
+  // BASE LAYER
+  [WIN_BASE] = LAYOUT_tkl_ansi(
+      KC_ESC,           KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,    KC_F12,      KC_PSCR,  KC_VOLD,  KC_VOLU,
+      KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_MINS, KC_EQL,    KC_BSPC,     KC_INS,   KC_HOME,  KC_PGUP,
+      KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_LBRC, KC_RBRC,   KC_BSLS,     KC_DEL,   KC_END,   KC_PGDN,
+      KC_CAPS, KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,            KC_ENT,
+      KC_LSFT, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH,          KC_RSFT,                          KC_UP,
+      KC_LCTL, KC_LGUI, KC_LALT,                   KC_SPC,                                      KC_RALT, KC_RGUI, MVL_FN,    KC_RCTL,     KC_LEFT,  KC_DOWN,  KC_RGHT
+  ),
+  // ADD-ON LAYERS - ADDONS TO THE BASE LAYER
+  // SPACE CADET LAYER - CHANGE SHIFT KEYS TO SPACE CADET KEYS
+  [SPACE_CA] = LAYOUT_tkl_ansi(
+          _______,         _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,   _______,     _______,  _______,  _______,
+        _______, _______, _______ , _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,   _______,     _______,  _______,  _______,
+        _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,    _______,     _______,  _______,  _______,
+        _______, _______, _______, _______, _______, _______, _______, _______, _______, _______ , _______, _______,            _______,
+        KC_LSPO, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          KC_RSPC,                         _______,
+        _______, _______, _______,                   _______,                                     _______, _______, _______,   _______,     _______, _______,  _______
     ),
-
+  // FUNCTION LAYERS - FN LAYER
   [WIN_FN] = LAYOUT_tkl_ansi(
           RESET,          NK_TOGG, GM_MODE, S_CADET, _______, _______, _______, KC_BRID, KC_BRIU, _______, _______, _______,   KC_MSTP,     KC_MPLY,  KC_MPRV,  KC_MNXT,
         _______, _______, KC_NUM , KC_PSLS, KC_PAST, _______, _______, _______, _______, _______, _______, _______, _______,   _______,     RGB_SPI,  RGB_SAI,  RGB_HUI,
@@ -152,32 +164,6 @@ void disable_rgb_tracked(bool status) {
   }
 }
 
-// TOGGLE FOR SPACE CADET KEY
-bool space_cadet_key_function(uint16_t keycode, bool pressed){
-    if (space_cadet_keys) {
-      return true;
-    }
-
-    // MAIN LOGIC
-    if (pressed) {
-      switch(keycode) {
-        case KC_LSPO:
-          register_code(KC_LSFT);
-        case KC_RSPC:
-          register_code(KC_RSFT);
-      }
-    }
-    else {
-      switch(keycode) {
-        case KC_LSPO:
-          unregister_code(KC_LSFT);
-        case KC_RSPC:
-          unregister_code(KC_RSFT);
-      }
-    }
-    return false;
-}
-
 bool dip_switch_update_user(uint8_t index, bool active){
   switch(index){
     case 0:
@@ -216,13 +202,13 @@ void matrix_status_indicators(void) {
 
   uint8_t beat_sin = beatsin8(100, 0, 255, 0, 0); // 100BPM Sine Wave Generator (8-bit)
   
-  if (!gui_keys_enabled || space_cadet_keys) {
-    // I can make this better but for performance's sake i'll do it this way..
+  if (!gui_keys_enabled || SPACE_CA_STATE) {
+    // I can make this not use keyboard specific coordinates but for performance's sake i'll do it this way..
     uint8_t keys[4] = {77, 81, 63, 74}; // Specific Coordinates for K8
     uint8_t rows[4] = {5,5, 4, 4};    // Specific Coordinates for K8
     uint8_t col[4] = {1, 11, 0, 13};   // Specific Coordinates for K8
     uint8_t layer = get_highest_layer(layer_state);
-    if (layer > 0) {
+    if (layer > SPACE_CA) {
       for (uint8_t index = 0; index < 4; ++index) {
         uint16_t keycode = keymap_key_to_keycode(layer, (keypos_t){col[index],rows[index]});
         if ((keycode == KC_TRNS)) {
@@ -231,7 +217,7 @@ void matrix_status_indicators(void) {
             rgb_matrix_set_color(keys[index], beat_sin, 0, 0);
           }
           // SPACE CADET
-          if (space_cadet_keys && index > 1){
+          if (SPACE_CA_STATE && index > 1){
             rgb_matrix_set_color(keys[index], beat_sin, 0, 0);
           }
         }
@@ -244,7 +230,7 @@ void matrix_status_indicators(void) {
             rgb_matrix_set_color(keys[index], beat_sin, 0, 0);
           }
           // SPACE CADET
-          if (space_cadet_keys && index > 1){
+          if (SPACE_CA_STATE && index > 1){
             rgb_matrix_set_color(keys[index], beat_sin, 0, 0);
           }
       }
@@ -261,9 +247,9 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     const uint16_t blocked_keys[] = {
       RESET, NK_TOGG, GM_MODE, M_SHUT, S_CADET,
     };
-    const uint8_t blocked_keys_size = sizeof(blocked_keys) / sizeof(blocked_keys[0]);
+    const size_t blocked_keys_size = sizeof(blocked_keys) / sizeof(blocked_keys[0]);
     // -SECTION START- LAYER INDICATOR
-    if (layer > WIN_BASE) {
+    if (layer > SPACE_CA) {
       for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
         for (uint8_t col = 0; col < MATRIX_COLS; ++col) {
             uint8_t index = g_led_config.matrix_co[row][col];
@@ -289,7 +275,6 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
                         rgb_matrix_set_color(index, RGB_RED);
                         break;
                       default:
-                        rgb_matrix_set_color(index, RGB_GREEN);
                         break;
                     }
                 }
@@ -341,7 +326,7 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
           rgb_matrix_set_color(59, beat_sin, 0, 0);
 
           // SPACE CADET KEY
-          if (space_cadet_keys) {
+          if (SPACE_CA_STATE) {
             rgb_matrix_set_color(3, 0, beat_sin, 0); // ENABLED COLOR: GREEN
           }
           else {
@@ -454,19 +439,16 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       }
       return true;
     // SPACE CADET SYSTEM
-    case KC_LSPO:
-      return space_cadet_key_function(keycode, record->event.pressed);
-    case KC_RSPC:
-      return space_cadet_key_function(keycode, record->event.pressed);
     case S_CADET:
       if (record->event.pressed) {
-        unregister_code16(KC_LSPO);
-        unregister_code16(KC_RSPC);
-        if (space_cadet_keys) {
-          space_cadet_keys = false;
+        if (SPACE_CA_STATE) {
+          layer_off(SPACE_CA);
+
+
+
         }
         else {
-          space_cadet_keys = true;
+          layer_on(SPACE_CA);
         }
       }
       return true;
