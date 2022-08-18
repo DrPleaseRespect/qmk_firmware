@@ -19,6 +19,7 @@
 
 #include QMK_KEYBOARD_H
 #include "lib/lib8tion/lib8tion.h"
+#include "./password_sys/pass_sys.h"
 
 // Each layer gets a name for readability, which is then used in the keymap matrix below.
 // The underscores don't mean anything - you can have a layer called STUFF or any other name.
@@ -169,7 +170,9 @@ bool dip_switch_update_user(uint8_t index, bool active){
     case 0:
       if(active) { // Mac mode
           //layer_move(MAC_BASE); Disabled because I don't want this
-            layer_move(WIN_FN);
+            if (pass_sys_isunlocked()) {
+              layer_move(WIN_FN);
+            }
       } else { // Windows mode
           layer_move(WIN_BASE);
       }
@@ -188,6 +191,20 @@ bool dip_switch_update_user(uint8_t index, bool active){
 }
 
 void matrix_status_indicators(void) {
+  // PASS SYSTEM
+  static uint16_t pass_indicator = 0;
+  if (!pass_sys_isunlocked()) {
+    display_pass_index();
+  }
+  else {
+    if (pass_indicator == 0) {
+      pass_indicator = timer_read();
+    }
+    if (timer_elapsed(pass_indicator) < 2000) {
+      display_pass_index();
+    }
+  }
+
   // -SECTION START- NKRO INDICATOR
   if (keymap_config.nkro) {
     rgb_matrix_set_color(1, RGB_BLUE);
@@ -201,7 +218,7 @@ void matrix_status_indicators(void) {
   // AND SPACE CADET KEY INDICATORS
 
   uint8_t beat_sin = beatsin8(100, 0, 255, 0, 0); // 100BPM Sine Wave Generator (8-bit)
-  
+
   if (!gui_keys_enabled || SPACE_CA_STATE) {
     // I can make this not use keyboard specific coordinates but for performance's sake i'll do it this way..
     uint8_t keys[4] = {77, 81, 63, 74}; // Specific Coordinates for K8
@@ -225,7 +242,7 @@ void matrix_status_indicators(void) {
     }
     else {
       for (uint8_t index = 0; index < 4; ++index) {
-          // GAME MODE          
+          // GAME MODE
           if (!gui_keys_enabled && index < 2){
             rgb_matrix_set_color(keys[index], beat_sin, 0, 0);
           }
@@ -254,8 +271,8 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
         for (uint8_t col = 0; col < MATRIX_COLS; ++col) {
             uint8_t index = g_led_config.matrix_co[row][col];
             uint16_t keycode = keymap_key_to_keycode(layer, (keypos_t){col,row});
-            if (index >= led_min && 
-                index <= led_max && 
+            if (index >= led_min &&
+                index <= led_max &&
                 index != NO_LED &&
                 keycode > KC_TRNS) {
                   // DON'T SET RGB COLOR OF KEYS THAT ARE IN THE BLOCKED_KEYS ARRAY
@@ -315,7 +332,7 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
           }
           uint8_t beat_sin = beatsin8(200, 0, 255, 0, 0); // 200BPM Sine Wave Generator (8-bit)
           // Game Mode Indicator
-          if (gui_keys_enabled) { 
+          if (gui_keys_enabled) {
             rgb_matrix_set_color(2, beat_sin, 0, 0); // DISABLED COLOR: RED
           }
           else {
@@ -401,6 +418,12 @@ void Macro_functions(void) {
 
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  if (pass_sys_isunlocked() == false) {
+    if (record->event.pressed) {
+      pass_set(keycode);
+    }
+    return false;
+  }
   switch (keycode) {
     // RGB TOGGLE
     case RGB_TOG:
