@@ -36,6 +36,7 @@ enum custom_keycodes {
   GM_MODE = SAFE_RANGE,
   M_SHUT,
   S_CADET,
+  P_LOCK,
 };
 
 
@@ -103,8 +104,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   [WIN_FN] = LAYOUT_tkl_ansi(
           RESET,          NK_TOGG, GM_MODE, S_CADET, _______, _______, _______, KC_BRID, KC_BRIU, _______, _______, _______,   KC_MSTP,     KC_MPLY,  KC_MPRV,  KC_MNXT,
         _______, _______, KC_NUM , KC_PSLS, KC_PAST, _______, _______, _______, _______, _______, _______, _______, _______,   _______,     RGB_SPI,  RGB_SAI,  RGB_HUI,
-        _______, KC_KP_7, KC_KP_8, KC_KP_9, KC_PMNS, _______, _______, _______, _______, _______, _______, _______, _______,   RGB_TOG,     RGB_SPD,  RGB_SAD,  RGB_HUD,
-        _______, KC_KP_4, KC_KP_5, KC_KP_6, KC_PPLS, _______, _______, _______, _______, M_SHUT , _______, _______,            _______,
+        _______, KC_KP_7, KC_KP_8, KC_KP_9, KC_PMNS, _______, _______, _______, _______, _______, M_SHUT , _______, _______,   RGB_TOG,     RGB_SPD,  RGB_SAD,  RGB_HUD,
+        _______, KC_KP_4, KC_KP_5, KC_KP_6, KC_PPLS, _______, _______, _______, _______, P_LOCK , _______, _______,            _______,
         _______, KC_KP_1, KC_KP_2, KC_KP_3, KC_PENT, _______, _______, _______, _______, _______, _______,          MV_MACR,                          RGB_VAI,
         _______, KC_PDOT, KC_KP_0,                   _______,                                     _______, _______, XXXXXXX,   _______,     RGB_RMOD, RGB_VAD,  RGB_MOD
     ),
@@ -262,7 +263,7 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     uint8_t layer = get_highest_layer(layer_state);
 
     const uint16_t blocked_keys[] = {
-      RESET, NK_TOGG, GM_MODE, M_SHUT, S_CADET,
+      RESET, NK_TOGG, GM_MODE, M_SHUT, S_CADET, P_LOCK
     };
     const size_t blocked_keys_size = sizeof(blocked_keys) / sizeof(blocked_keys[0]);
     // -SECTION START- LAYER INDICATOR
@@ -340,6 +341,9 @@ void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
           }
 
           // M SHUT MACRO
+          rgb_matrix_set_color(43, beat_sin, 0, 0);
+
+          // PASS LOCK BUTTON
           rgb_matrix_set_color(59, beat_sin, 0, 0);
 
           // SPACE CADET KEY
@@ -475,6 +479,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         }
       }
       return true;
+    case P_LOCK:
+        lock_pass();
+        return true;
     default:
       return true;
   }
