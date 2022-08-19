@@ -1,5 +1,5 @@
 /* Copyright 2022 DrPleaseRespect <DrPleaseRespect@outlook.com>
- * 
+ *
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ void set_pass_limits(void);
 void pass_remove(void);
 void display_pass_index(void);
 bool verify_pass(void);
+void lock_pass(void);
 bool pass_sys_isunlocked(void);
 bool pass_sys_islocked(void);
 void reset_pass(void);

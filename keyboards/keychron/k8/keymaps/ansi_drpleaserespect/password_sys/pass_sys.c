@@ -1,5 +1,5 @@
 /* Copyright 2022 DrPleaseRespect <DrPleaseRespect@outlook.com>
- * 
+ *
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@ void pass_set(uint16_t keycode) {
 	}
 	if (passindex < PASS_SIZE) {
 		passcode_history_sys[passindex] = keycode;
-		passindex++; 
+		passindex++;
 	}
 }
 
@@ -67,7 +67,7 @@ void display_pass_index(void) {
 		uint8_t beat_saw = beat8(255, 0);
 		rgb_matrix_set_color_all(beat_saw,0,0);
 	}
-	
+
 	for (uint16_t index = PassIndicatorSTART; index < (PassIndicatorSTART + passindex); ++index) {
 		if (pass_sys_unlocked) {
 			rgb_matrix_set_color(index, 0, 255, 0);
