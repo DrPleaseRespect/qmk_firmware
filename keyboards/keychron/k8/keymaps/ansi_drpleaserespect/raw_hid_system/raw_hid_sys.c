@@ -163,12 +163,14 @@ void disable_rgb_tracked(bool status) {
 
 void VolumeLevelIndicator(bool pressed){
     static uint16_t Volume_Timer = 0;
+    static bool display = false;
     uint8_t rgb_value;
     uint8_t id;
     if (pressed == true){
+        display = true;
         Volume_Timer = timer_read();
     }
-    if (timer_elapsed(Volume_Timer) < 1000) {
+    if (timer_elapsed(Volume_Timer) < 1000 && display) {
         uint8_t normalized_volume = (uint16_t)(SystemVolume * 10) / 100;
         rgb_value = ((SystemVolume % 10) * 255) / (10 - 1);
         if (normalized_volume == 0) {
@@ -184,6 +186,9 @@ void VolumeLevelIndicator(bool pressed){
             rgb_matrix_set_color(id, (255 - rgb_value), rgb_value, 0);
 
        }
+    }
+    else {
+        display = false;
     }
 }
 
