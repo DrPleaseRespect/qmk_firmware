@@ -36,19 +36,8 @@ uint32_t get_millisecond_timer(void) {
   return timer_read32();
 }
 
+// PASS MANAGEMENT
 void pass_set(uint16_t keycode) {
-	switch (keycode) {
-		case KC_ENTER:
-		{
-			verify_pass();
-			return;
-		}
-		case KC_BACKSPACE:
-		{
-			pass_remove();
-			return;
-		}
-	}
 	if (passindex < PASS_SIZE) {
 		passcode_history_sys[passindex] = keycode;
 		passindex++;
@@ -62,32 +51,11 @@ void pass_remove(void) {
 	passcode_history_sys[passindex] = 0;
 }
 
-void display_pass_index(void) {
-	if (!pass_sys_unlocked) {
-		uint8_t beat_saw = beat8(255, 0);
-		rgb_matrix_set_color_all(beat_saw,0,0);
-	}
-
-	for (uint16_t index = PassIndicatorSTART; index < (PassIndicatorSTART + passindex); ++index) {
-		if (pass_sys_unlocked) {
-			rgb_matrix_set_color(index, 0, 255, 0);
-		}
-		else {
-			rgb_matrix_set_color(index, 0, 0, 255);
-		}
-	}
-}
-
 void reset_pass(void) {
 	for (uint8_t index = 0; index < PASS_SIZE; ++index) {
 		passcode_history_sys[index] = 0;
 	}
 	passindex = 0;
-}
-
-void lock_pass(void) {
-	pass_sys_unlocked = false;
-	reset_pass();
 }
 
 bool verify_pass(void) {
@@ -103,6 +71,80 @@ bool verify_pass(void) {
 	}
 	pass_sys_unlocked = true;
 	return true;
+}
+
+// HOOKS
+
+// PASS INPUT HOOK
+bool pass_hook(keyrecord_t *record) {
+	// BYPASS LAYERS AND ONLY USE KEYCODES AVAILABLE IN LAYER 0
+	uint16_t keycode = keymap_key_to_keycode(0, record->event.key);
+	if (pass_sys_isunlocked() == false) {
+		if (record->event.pressed) {
+			switch (keycode) {
+				case KC_ENTER:
+				{
+					verify_pass();
+					break;
+				}
+				case KC_BACKSPACE:
+				{
+					pass_remove();
+					break;
+				}
+				default:
+				{
+					pass_set(keycode);
+					break;
+				}
+			}
+			
+			return false;
+		}
+	}
+	return true;
+}
+
+// DISPLAY HOOK
+void display_pass_index(void) {
+	static uint16_t pass_indicator = 0;
+	static bool display = false;
+	
+	if (!pass_sys_unlocked) {
+		if (pass_indicator != 0) {
+			pass_indicator = 0;
+		}
+		display = true;
+		uint8_t beat_saw = beat8(255, 0);
+		rgb_matrix_set_color_all(beat_saw,0,0);
+	}
+	else {
+		if (pass_indicator == 0) {
+			pass_indicator = timer_read();
+		}
+	}
+
+	if ((timer_elapsed(pass_indicator) < 2000 || !pass_sys_unlocked) && display) {
+		for (uint8_t index = PassIndicatorSTART; index < (PassIndicatorSTART + passindex); ++index) {
+			if (pass_sys_unlocked) {
+				rgb_matrix_set_color(index, 0, 255, 0);
+			}
+			else {
+				rgb_matrix_set_color(index, 0, 0, 255);
+			}
+		}
+	}
+	else {
+		display = false;
+		return;
+	}
+}
+
+// HELPER FUNCTIONS
+
+void lock_pass(void) {
+	pass_sys_unlocked = false;
+	reset_pass();
 }
 
 bool pass_sys_isunlocked(void) {

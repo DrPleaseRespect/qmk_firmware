@@ -18,12 +18,8 @@
 #pragma once
 
 uint32_t get_millisecond_timer(void);
-void pass_set(uint16_t keycode);
-void set_pass_limits(void);
-void pass_remove(void);
+bool pass_hook(keyrecord_t *record);
 void display_pass_index(void);
-bool verify_pass(void);
 void lock_pass(void);
 bool pass_sys_isunlocked(void);
 bool pass_sys_islocked(void);
-void reset_pass(void);
