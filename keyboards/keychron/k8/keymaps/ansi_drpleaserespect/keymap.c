@@ -170,9 +170,7 @@ bool dip_switch_update_user(uint8_t index, bool active){
     case 0:
       if(active) { // Mac mode
           //layer_move(MAC_BASE); Disabled because I don't want this
-            if (pass_sys_isunlocked()) {
-              layer_move(WIN_FN);
-            }
+          layer_move(WIN_FN);
       } else { // Windows mode
           layer_move(WIN_BASE);
       }
@@ -191,20 +189,8 @@ bool dip_switch_update_user(uint8_t index, bool active){
 }
 
 void matrix_status_indicators(void) {
-
-  // PASS SYSTEM
-  static uint16_t pass_indicator = 0;
-  if (!pass_sys_isunlocked()) {
-    display_pass_index();
-  }
-  else {
-    if (pass_indicator == 0) {
-      pass_indicator = timer_read();
-    }
-    if (timer_elapsed(pass_indicator) < 2000) {
-      display_pass_index();
-    }
-  }
+  // PASS SYSTEM DISPLAY HOOK
+  display_pass_index();
 
   // RAW_HID VOLUME LEVEL INDICATOR
   #ifdef RAW_ENABLE
@@ -426,12 +412,12 @@ void Macro_functions(void) {
 
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  if (pass_sys_isunlocked() == false) {
-    if (record->event.pressed) {
-      pass_set(keycode);
-    }
+  // PASS SYSTEM KEY HOOK
+  bool pass_sys_hook = pass_hook(record);
+  if (!pass_sys_hook) {
     return false;
   }
+
   switch (keycode) {
     // RGB TOGGLE
     case RGB_TOG:
@@ -474,15 +460,14 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       if (record->event.pressed) {
         if (SPACE_CA_STATE) {
           layer_off(SPACE_CA);
-
-
-
         }
         else {
           layer_on(SPACE_CA);
         }
       }
       return true;
+
+    // PASS SYSTEM KEY
     case P_LOCK:
         lock_pass();
         return true;
