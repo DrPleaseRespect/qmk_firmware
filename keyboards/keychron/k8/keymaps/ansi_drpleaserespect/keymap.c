@@ -488,6 +488,7 @@ void keyboard_pre_init_user(void) {
 
 void eeconfig_init_user(void) {
   init_eeprom = true; // Enabled due to reset of EEPROM
+  pass_sys_eeconfig_init_hook();
 }
 
 void keyboard_post_init_user(void) {
@@ -496,6 +497,7 @@ void keyboard_post_init_user(void) {
   //debug_matrix=true;
   //debug_keyboard=true;
   //debug_mouse=true;
+  pass_sys_kb_postinit_hook();
   if (init_eeprom) { // Only Execute if eeprom is reset
     rgb_matrix_enable();
     rgb_matrix_mode(RGB_MATRIX_SOLID_COLOR);
