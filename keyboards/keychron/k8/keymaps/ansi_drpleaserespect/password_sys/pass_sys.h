@@ -23,3 +23,7 @@ void display_pass_index(void);
 void lock_pass(void);
 bool pass_sys_isunlocked(void);
 bool pass_sys_islocked(void);
+void pass_sys_kb_postinit_hook(void);
+void pass_sys_eeconfig_init_hook(void);
+void eeconfig_init_user(void);
+void keyboard_post_init_user(void);
