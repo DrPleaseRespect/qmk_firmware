@@ -63,6 +63,16 @@ uint8_t host_keyboard_leds(void) {
 #ifdef SPLIT_KEYBOARD
     if (!is_keyboard_master()) return split_led_state;
 #endif
+
+#ifdef BLUETOOTH_ENABLE
+    uint8_t where = where_to_send();
+    if (where == OUTPUT_BLUETOOTH) {
+        return bluetooth_led_state();
+    } else if (where == OUTPUT_NONE) {
+        return 0;
+    }
+#endif
+
     if (!driver) return 0;
     return (*driver->keyboard_leds)();
 }
@@ -74,8 +84,11 @@ led_t host_keyboard_led_state(void) {
 /* send report */
 void host_keyboard_send(report_keyboard_t *report) {
 #ifdef BLUETOOTH_ENABLE
-    if (where_to_send() == OUTPUT_BLUETOOTH) {
+    uint8_t where = where_to_send();
+    if (where == OUTPUT_BLUETOOTH) {
         bluetooth_send_keyboard(report);
+        return;
+    } else if (where == OUTPUT_NONE) {
         return;
     }
 #endif
@@ -108,8 +121,11 @@ void host_keyboard_send(report_keyboard_t *report) {
 
 void host_mouse_send(report_mouse_t *report) {
 #ifdef BLUETOOTH_ENABLE
-    if (where_to_send() == OUTPUT_BLUETOOTH) {
+    uint8_t where = where_to_send();
+    if (where == OUTPUT_BLUETOOTH) {
         bluetooth_send_mouse(report);
+        return;
+    } else if (where == OUTPUT_NONE) {
         return;
     }
 #endif
@@ -130,6 +146,16 @@ void host_system_send(uint16_t usage) {
     if (usage == last_system_usage) return;
     last_system_usage = usage;
 
+#ifdef BLUETOOTH_ENABLE
+    uint8_t where = where_to_send();
+    if (where == OUTPUT_BLUETOOTH) {
+        bluetooth_send_system(usage);
+        return;
+    } else if (where == OUTPUT_NONE) {
+        return;
+    }
+#endif
+
     if (!driver) return;
 
     report_extra_t report = {
@@ -144,8 +170,11 @@ void host_consumer_send(uint16_t usage) {
     last_consumer_usage = usage;
 
 #ifdef BLUETOOTH_ENABLE
-    if (where_to_send() == OUTPUT_BLUETOOTH) {
+    uint8_t where = where_to_send();
+    if (where == OUTPUT_BLUETOOTH) {
         bluetooth_send_consumer(usage);
+        return;
+    } else if (where == OUTPUT_NONE) {
         return;
     }
 #endif
