@@ -16,21 +16,13 @@
  */
 
 #include "pass_sys.h"
+#include "../../eeprom_definitions.h"
 
 #define PASS_SIZE sizeof(pass_code) / sizeof(pass_code[0])
 #define PassIndicatorSTART 17
 
 // LOCKED = TRUE | UNLOCKED = FALSE
 #define DefaultLockState false
-
-typedef union {
-	uint32_t raw;
-	struct {
-		bool pass_sys_unlocked :1;
-	};
-} user_config_t;
-
-user_config_t eeprom_config;
 
 static const uint16_t pass_code[] = {KC_UP, KC_UP, KC_DOWN, KC_DOWN, KC_LEFT, KC_RIGHT, KC_LEFT, KC_RIGHT};
 static int8_t passindex = 0;
@@ -101,7 +93,7 @@ bool pass_hook(keyrecord_t *record) {
 					break;
 				}
 			}
-			
+
 			return false;
 		}
 	}
@@ -112,7 +104,7 @@ bool pass_hook(keyrecord_t *record) {
 void display_pass_index(void) {
 	static uint16_t pass_indicator = 0;
 	static bool display = false;
-	
+
 	if (!eeprom_config.pass_sys_unlocked) {
 		if (pass_indicator != 0) {
 			pass_indicator = 0;

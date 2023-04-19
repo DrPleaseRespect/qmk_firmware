@@ -21,6 +21,9 @@
 #include QMK_KEYBOARD_H
 #include "lib/lib8tion/lib8tion.h"
 #include "./features/password_sys/pass_sys.h"
+#include "eeprom_definitions.h"
+
+
 
 // Each layer gets a name for readability, which is then used in the keymap matrix below.
 // The underscores don't mean anything - you can have a layer called STUFF or any other name.
