@@ -140,7 +140,7 @@ void pass_sys_kb_postinit_hook(void) {
 }
 
 void pass_sys_eeconfig_init_hook(void) {
-	eeprom_config.raw = 0;
+	eeprom_config.raw = eeconfig_read_user();
 	eeprom_config.pass_sys_unlocked = !DefaultLockState;
 	eeconfig_update_user(eeprom_config.raw);
 }
