@@ -338,7 +338,6 @@ bool dipswitch_bluetooth(uint8_t index, bool active) {
                 } else {
                     set_output(OUTPUT_NONE);
                 }
-                current_profile_state = STATE_CONNECTING;
                 defer_exec(100, bt_led_blinking, NULL);
             }
             return false;
