@@ -288,6 +288,11 @@ void iton_bt_enters_connection_state() {
 
 bool bluetooth_led(void) {
     if (btprofile_led) {
+        if (current_profile_state == STATE_DISCONNECTED) {
+            rgb_matrix_set_color_all(255, 0, 0);
+            rgb_matrix_set_color(BLUETOOTH_LED_OFFSET + eeprom_config.bt_profile, 0, 0, 255);
+            return true;
+        }
         rgb_matrix_set_color_all(0,0,0);
         rgb_matrix_set_color(BLUETOOTH_LED_OFFSET + eeprom_config.bt_profile, 0, 0, 255);
     }
