@@ -1,6 +1,6 @@
-# GG Ironclad
+# DesignedbyGG Ironclad
 
-Ironclad
+Ironclad ICL01 (v1 and v2)
 
 Keyboard Maintainer: [Dimitris Mantzouranis](https://github.com/dexter93)
 Brought to you by: [SonixQMK](https://github.com/SonixQMK/qmk_firmware)
