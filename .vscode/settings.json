@@ -1,5 +1,17 @@
 // Place your settings in this file to overwrite default and user settings.
 {
+    "terminal.integrated.profiles.windows": {
+        "QMK_MSYS": {
+            "path": "G:/QMK_MSYS/usr/bin/bash.exe",
+            "env": {
+                "MSYSTEM": "MINGW64",
+                "CHERE_INVOKING": "1"
+            },
+            "args": ["--login"]
+        }
+    },
+
+    "terminal.integrated.cursorStyle": "line",
     // Unofficially, QMK uses spaces for indentation
     "editor.insertSpaces": true,
     // Configure glob patterns for excluding files and folders.
@@ -30,5 +42,9 @@
     },
     "clangd.arguments": [
         "--header-insertion=never"
-    ]
+    ],
+    "C_Cpp.default.defines": [
+        "QMK_KEYBOARD_H=quantum.h"
+    ],
+    "C_Cpp.default.compileCommands": "${workspaceFolder}/compile_commands.json"
 }
