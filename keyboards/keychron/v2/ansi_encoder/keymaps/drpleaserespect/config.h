@@ -5,6 +5,8 @@
 #define GRAVE_ESC_ALT_OVERRIDE
 #define RETRO_TAPPING_PER_KEY
 
+#define OS_DETECTION_KEYBOARD_RESET
+
 // RGB Matrix Animation modes. Explicitly enabled
 // For full list of effects, see:
 // https://docs.qmk.fm/#/feature_rgb_matrix?id=rgb-matrix-effects

@@ -24,3 +24,4 @@
 bool gm_active;
 bool process_gm_hook(uint16_t gm_keycode, uint16_t keycode, keyrecord_t *record);
 void rgb_matrix_gm_hook(uint16_t gm_keycode, uint16_t keycode, uint8_t index);
+void gamemode_activate(bool state);

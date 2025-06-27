@@ -19,10 +19,11 @@
 #include "lib/lib8tion/lib8tion.h"
 #include "encoder_spinner.h"
 #include "print.h"
+#include "color.h"
 
 
 static uint8_t spinner_position = 0;
-static bool	spinner_active   = false;
+static bool	spinner_select_active   = SPINNER_DEFAULT_SELECT;
 static bool spinner_dtapped  = false;
 
 static bool spinner_tapped = false;
@@ -39,6 +40,21 @@ __attribute__ ((weak)) void process_encoder_keys(uint8_t pos, uint8_t flags) {
 	dprintf("encoder_spinner pos: %x \n", flags);
 }
 
+__attribute__ ((weak)) RGB user_spinner_indicator(uint8_t spin_idx, bool select_active, bool selected_idx) {
+	// Initializing RGB without literals can lead to unexpected behavior
+	// due to WS2812_BYTE_ORDER
+	if (selected_idx) {
+		if (select_active) {
+			RGB colors = {.r = 0, .g = beatsin8(100, 0, 255, 0, 0) , .b = 0};
+			return colors;
+		} else {
+			RGB colors = {.r = 0, .g = 255, .b = 0};
+			return colors;
+		}
+	}
+	RGB colors = {.r = 255, .g = 0, .b = 0};
+	return colors;
+}
 
 void spinner_key(uint16_t CW_keycode, uint16_t CCW_keycode, uint16_t buttonkeycode, uint16_t keycode, keyrecord_t *record) {
 	if (record->event.pressed) {
@@ -47,9 +63,9 @@ void spinner_key(uint16_t CW_keycode, uint16_t CCW_keycode, uint16_t buttonkeyco
 			if (spinner_tapped && !timer_expired(record->event.time, spin_tap_timer)) {
 				// Double Tapped
 				spinner_dtapped = true;
-				spinner_active = !spinner_active;
+				spinner_select_active = !spinner_select_active;
 				dprint("Spinner Key Double Tapped \n");
-				dprintf("spinner_active Status: %hu \n", spinner_active);
+				dprintf("spinner_select_active Status: %hu \n", spinner_select_active);
 			}
 			spinner_tapped = true;
 			spin_tap_timer = record->event.time + SPIN_DOUBLETAP_DELAY;
@@ -60,7 +76,7 @@ void spinner_key(uint16_t CW_keycode, uint16_t CCW_keycode, uint16_t buttonkeyco
 
 		// Counterclock-wise Function
 		if (keycode == CCW_keycode) {
-			if (spinner_active) {
+			if (spinner_select_active) {
 				spinner_position = spinner_position - 1;
 				if (spinner_position >= SPINNER_SIZE) {
 					spinner_position = SPINNER_SIZE - 1; // Remove 1 for Zero Indexing
@@ -74,7 +90,7 @@ void spinner_key(uint16_t CW_keycode, uint16_t CCW_keycode, uint16_t buttonkeyco
 
 		// Clockwise Function
 		if (keycode == CW_keycode) {
-			if (spinner_active) {
+			if (spinner_select_active) {
 				spinner_position = spinner_position + 1;
 				if (spinner_position >= SPINNER_SIZE) {
 					spinner_position = 0;
@@ -97,10 +113,10 @@ void matrix_scan_spinner(void) {
 			if (!spinner_dtapped) {
 				spinner_tapped = false; // Reset State
 				dprint("Spinner Key Single Tapped \n");
-				if (!spinner_active) {
+				if (!spinner_select_active) {
 					process_encoder_keys(spinner_position, SPINNER_BUTTON);
 				} else {
-					spinner_active = !spinner_active;
+					spinner_select_active = !spinner_select_active;
 				}
 			} else {
 				spinner_dtapped = false;
@@ -117,15 +133,8 @@ void spinner_rgb_indicator(void) {
 	for (uint8_t index = SPIN_INDI_INDEX;
 		 index <= (SPIN_INDI_INDEX + (SPINNER_SIZE - 1)); // SPINNER_SIZE - 1 // For 0 Index
 		  ++index) {
-		if ((spinner_position + SPIN_INDI_INDEX) == index) {
-			if (spinner_active) {
-				rgb_matrix_set_color(index, 0,beatsin8(100, 0, 255, 0, 0) ,0);
-			} else {
-				rgb_matrix_set_color(index, RGB_GREEN);
-
-			}
-		} else {
-		rgb_matrix_set_color(index, RGB_RED);			
-		}
+		bool selected_idx = ((spinner_position + SPIN_INDI_INDEX) == index);
+		RGB colors = user_spinner_indicator(spinner_position, spinner_select_active, selected_idx);
+		rgb_matrix_set_color(index, colors.r, colors.g, colors.b);
 	}
 }
