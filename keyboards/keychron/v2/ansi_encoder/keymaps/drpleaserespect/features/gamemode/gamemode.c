@@ -26,6 +26,10 @@ __attribute__ ((weak)) uint32_t get_millisecond_timer(void) {
   return timer_read32();
 }
 
+void gamemode_activate(bool state) {
+	gm_active = state;
+}
+
 bool process_gm_hook(uint16_t gm_keycode, uint16_t keycode, keyrecord_t *record) {
 	if (keycode == gm_keycode) {
 		if (record->event.pressed) {

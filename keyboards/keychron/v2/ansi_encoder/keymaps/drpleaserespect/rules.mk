@@ -8,10 +8,12 @@ TOP_SYMBOLS = yes
 LTO_ENABLE = no
 CONSOLE_ENABLE = no
 RAW_ENABLE = yes
+OS_DETECTION_ENABLE = yes
 
 
 VPATH += keyboards/keychron/common
 #SRC += keychron_common.c
 SRC += ./features/gamemode/gamemode.c
 SRC += ./features/encoder_spinner/encoder_spinner.c
-SRC += ./features/rawhid_control/control.c
+SRC += ./features/socd/socd.c
+SRC += ./features/auto_nkro/auto_nkro.c

@@ -17,24 +17,21 @@
 
 #pragma once
 
-#define SPIN_INDI_INDEX 1
-#define SPIN_DOUBLETAP_DELAY 300
+#define RGBSTATUS_DURATION 300 // in miliseconds
+
+#define RGBSTATUS_DISPLAY_IDX 16
 
 
-#define SPINNER_DEFAULT_SELECT false
-#define SPINNER_SIZE 5
+void display_status(uint8_t value, uint8_t max_value);
 
-#define SPINNER_CW     (1 << 0)
-#define SPINNER_CCW    (1 << 1)
-#define SPINNER_BUTTON (1 << 2)
+void display_rgb_mode(void);
 
+void display_rgb_val(void);
 
-void process_encoder_keys(uint8_t pos, uint8_t flags);
+void display_rgb_hue(void);
 
-RGB user_spinner_indicator(uint8_t spin_idx, bool select_active, bool selected_idx);
+void display_rgb_sat(void);
 
-void spinner_key(uint16_t CW_keycode, uint16_t CCW_keycode, uint16_t buttonkeycode, uint16_t keycode, keyrecord_t *record);
+void display_rgb_speed(void);
 
-void matrix_scan_spinner(void);
-
-void spinner_rgb_indicator(void);
+void stop_rgb_status(void);
