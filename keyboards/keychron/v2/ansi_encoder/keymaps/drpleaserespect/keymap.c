@@ -272,8 +272,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TILD, KC_F1,    KC_F2,    KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10,   KC_F11,   KC_F12,   _______,          KC_MUTE,
         KC_NUM,  KC_KP_7,  KC_KP_8,  KC_KP_9, _______, _______, _______, _______, _______, _______, _______,  _______,  _______,  _______,          KC_INS,
         _______, KC_KP_4,  KC_KP_5,  KC_KP_6, _______, KC_BTN1, KC_BTN2, _______, _______, _______, _______,  _______,            _______,          KC_END,
-        _______, KC_KP_1,  KC_KP_2,  KC_KP_3, _______, _______, _______, _______, _______, _______, _______,                      FNTOGG, KC_MS_U,
-        _______, KC_PDOT,  KC_KP_0,                             _______,                            _______,  _______,  _______,  KC_MS_L, KC_MS_D, KC_MS_R),
+        _______, KC_KP_1,  KC_KP_2,  KC_KP_3, _______, _______, _______, _______, _______, _______, _______,                      FNTOGG, MS_UP,
+        _______, KC_PDOT,  KC_KP_0,                             _______,                            _______,  _______,  _______,  MS_LEFT, MS_DOWN, MS_RGHT),
 
     [_FN_KEYS] = LAYOUT_ansi_67(
         KC_ESC,  KC_F1,    KC_F2,    KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10,   KC_F11,   KC_F12,   _______,          QK_BOOT,
